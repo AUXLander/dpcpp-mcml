@@ -2,6 +2,7 @@
 #include <CL/sycl/backend/cuda.hpp>
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include "matrix.hpp"
 #include "mcml.hpp"
@@ -60,6 +61,8 @@ int main(int argc, char* argv[])
         int* host_data = sycl::malloc_host<int>(N, q);
         int* device_data = sycl::malloc_device<int>(N, q);
         int* device_group_data_pool = sycl::malloc_device<int>(N * num_groups, q);
+
+        raw_memory_matrix_view<int> host_view(host_data, N_x, N_y, N_z, N_l);
 
         InputStruct input;
 
@@ -139,17 +142,17 @@ int main(int argc, char* argv[])
         q.wait();
     
         int index = 0;
+        int l = 0;
 
-        for (int i = 0; i < N_y; ++i)
+        for (int y = 0; y < host_view.size_y(); ++y)
         {
-            for (int j = 0; j < N_x; ++j)
+            for (int x = 0; x < host_view.size_x(); ++x)
             {
                 int v = 0;
-                int layer_offset = 0; // N_x* N_y* N_z * 3;
 
-                for (int k = 0; k < N_z; ++k)
+                for (int z = 0; z < host_view.size_z(); ++z)
                 {
-                    v += host_data[layer_offset + N_x * N_y * k + index];
+                    v += host_view.at(x, y, z, l);
                 }
 
                 std::cout << std::setw(8) << v << ' ';
@@ -158,6 +161,16 @@ int main(int argc, char* argv[])
             }
 
             std::cout << '\n';
+        }
+
+        std::fstream file("output.bin", std::ios_base::binary | std::ios_base::out);
+
+        assert(file.is_open());
+
+        if (file.is_open())
+        {
+            host_view.save(file);
+            file.close();
         }
 
         sycl::free(input.layerspecs, q);

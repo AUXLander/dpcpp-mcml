@@ -1,5 +1,6 @@
 #pragma once
 #include <cassert>
+#include <iostream>
 
 using atomic_array_ref = sycl::atomic_ref<int, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>;
 
@@ -96,6 +97,49 @@ public:
 	T& at(size_t x, size_t y, size_t z, size_t l)
 	{
 		return *(__data + index(x, y, z, l));
+	}
+
+	T& at(size_t x, size_t y, size_t z, size_t l) const
+	{
+		return *(__data + index(x, y, z, l));
+	}
+
+	void save(std::ostream& outstream) const
+	{
+		for (size_t l = 0; l < size_x(); ++l)
+		{
+			for (size_t z = 0; z < size_x(); ++z)
+			{
+				for (size_t y = 0; y < size_x(); ++y)
+				{
+					for (size_t x = 0; x < size_x(); ++x)
+					{
+						const auto *ptr = reinterpret_cast<const char*>(&at(x, y, z, l));
+
+						outstream.write(ptr, sizeof(T));
+					}
+				}
+			}
+		}
+	}
+
+	void load(std::istream& instream)
+	{
+		for (size_t l = 0; l < size_x(); ++l)
+		{
+			for (size_t z = 0; z < size_x(); ++z)
+			{
+				for (size_t y = 0; y < size_x(); ++y)
+				{
+					for (size_t x = 0; x < size_x(); ++x)
+					{
+						auto ptr = reinterpret_cast<char*>(&at(x, y, z, l));
+
+						instream.read(ptr, sizeof(T));
+					}
+				}
+			}
+		}
 	}
 };
 
