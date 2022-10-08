@@ -186,7 +186,7 @@ struct PhotonStruct
 
 	void track()
 	{
-		auto v = atomic_array_ref(view.at(this->x, this->y, this->z, 0));
+		auto v = atomic_array_ref(view.at(this->x, this->y, this->z, this->layer));
 
 		v.fetch_add(1);
 	}

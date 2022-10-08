@@ -5,7 +5,10 @@
 #include <fstream>
 #include <iomanip>
 #include "matrix.hpp"
+#include "iofile.hpp"
 #include "mcml.hpp"
+
+iofile fmanager;
 
 static auto exception_handler = [](sycl::exception_list e_list)
 {
@@ -144,13 +147,13 @@ int main(int argc, char* argv[])
         int index = 0;
         int l = 0;
 
-        for (int y = 0; y < host_view.size_y(); ++y)
+        for (int y = 0; y < host_view.properties.size_y(); ++y)
         {
-            for (int x = 0; x < host_view.size_x(); ++x)
+            for (int x = 0; x < host_view.properties.size_x(); ++x)
             {
                 int v = 0;
 
-                for (int z = 0; z < host_view.size_z(); ++z)
+                for (int z = 0; z < host_view.properties.size_z(); ++z)
                 {
                     v += host_view.at(x, y, z, l);
                 }
@@ -163,14 +166,10 @@ int main(int argc, char* argv[])
             std::cout << '\n';
         }
 
-        std::fstream file("output.bin", std::ios_base::binary | std::ios_base::out);
-
-        assert(file.is_open());
-
-        if (file.is_open())
         {
-            host_view.save(file);
-            file.close();
+            auto file = fmanager.open();
+
+            fmanager.export_file(host_view, file);
         }
 
         sycl::free(input.layerspecs, q);

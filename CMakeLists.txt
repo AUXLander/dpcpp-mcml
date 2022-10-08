@@ -23,4 +23,6 @@ add_executable(
       src/main.cpp 
       src/mcml.hpp
       src/matrix.hpp
+	src/iofile.hpp
+	src/pipe.hpp
 )
