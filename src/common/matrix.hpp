@@ -15,7 +15,7 @@ public:
 		__size_x(width), __size_y(height), __size_z(depth), __size_l(layer)
 	{;}
 
-	constexpr size_t index(size_t x, size_t y, size_t z, size_t l) const noexcept
+	size_t index(size_t x, size_t y, size_t z, size_t l) const noexcept
 	{
 		size_t lspec, index;
 		
@@ -54,6 +54,11 @@ public:
 		return __size_l;
 	}
 
+	constexpr size_t length() const noexcept
+	{
+		return __size_x * __size_y * __size_z * __size_l;
+	}
+
 	void save(std::ostream& ostream) const
 	{
 		pipe_utils::save_value(ostream, __size_x);
@@ -75,10 +80,47 @@ template<class T>
 class raw_memory_matrix_view
 {
 	matrix_properties __props;
+
+protected:
 	T*                __data {nullptr};
 
+public:
+
+	const matrix_properties& properties;
+
+protected:
+	raw_memory_matrix_view() :
+		__props{ 0, 0, 0, 0 }, __data{ nullptr }, properties{ __props }
+	{;}
+
+	raw_memory_matrix_view(size_t width, size_t height, size_t depth, size_t count_of_layers) :
+		__props{ width, height, depth, count_of_layers }, __data{ nullptr }, properties{ __props }
+	{;}
+
+	void load_props(std::istream& istream)
+	{
+		__props.load(istream);
+	}
+
+	void load_data(std::istream& istream)
+	{
+		for_each(
+			[&](size_t x, size_t y, size_t z, size_t l)
+			{
+				pipe_utils::load_value(istream, at(x, y, z, l));
+			}
+		);
+	}
+
+public:
+	raw_memory_matrix_view(T* data, size_t width, size_t height, size_t depth, size_t count_of_layers) :
+		__props{ width, height, depth, count_of_layers }, __data{ data }, properties{ __props }
+	{
+		assert(__data);
+	}
+
 	template<class Tlambda>
-	inline void __for_each_cell(Tlambda&& for_cell) const
+	void for_each(Tlambda&& for_cell) const
 	{
 		for (size_t l = 0; l < __props.size_l(); ++l)
 		{
@@ -95,23 +137,12 @@ class raw_memory_matrix_view
 		}
 	}
 
-public:
-
-	const matrix_properties& properties;
-
-public:
-	raw_memory_matrix_view(T* data, size_t width, size_t height, size_t depth, size_t count_of_layers) :
-		__props{ width, height, depth, count_of_layers }, __data{ data }, properties{ __props }
-	{
-		assert(__data);
-	}
-
-	T& at(size_t x, size_t y, size_t z, size_t l)
+	inline T& at(size_t x, size_t y, size_t z, size_t l)
 	{
 		return __data[__props.index(x, y, z, l)];
 	}
 
-	T& at(size_t x, size_t y, size_t z, size_t l) const
+	inline T& at(size_t x, size_t y, size_t z, size_t l) const
 	{
 		return __data[__props.index(x, y, z, l)];
 	}
@@ -123,7 +154,7 @@ public:
 
 	void save_data(std::ostream& ostream) const
 	{
-		__for_each_cell(
+		for_each(
 			[&](size_t x, size_t y, size_t z, size_t l)
 			{
 				pipe_utils::save_value(ostream, at(x, y, z, l));
@@ -136,25 +167,49 @@ public:
 		save_props(ostream);
 		save_data(ostream);
 	}
+};
 
-	void load_props(std::istream& istream)
+template<class T>
+class memory_matrix_view : public raw_memory_matrix_view<T>
+{
+	std::unique_ptr<T> __data_owner { nullptr };
+	size_t             __capacity   { 0U };
+
+	void realloc()
 	{
-		__props.load(istream);
+		__capacity = properties.length();
+		__data_owner.reset(new T[__capacity]{ T(0) });
+		__data = __data_owner.get();
 	}
 
-	void load_data(std::istream& istream)
+public:
+	memory_matrix_view() : 
+		raw_memory_matrix_view<T>(),
+		__data_owner { nullptr },
+		__capacity { 0U }
+	{;}
+
+	memory_matrix_view(size_t width, size_t height, size_t depth, size_t count_of_layers) :
+		raw_memory_matrix_view<T>(width, height, depth, count_of_layers)
 	{
-		__for_each_cell(
-			[&](size_t x, size_t y, size_t z, size_t l)
-			{
-				pipe_utils::load_value(istream, at(x, y, z, l));
-			}
-		);
+		realloc();
+	}
+
+	void save(std::ostream& ostream) const
+	{
+		save_props(ostream);
+		save_data(ostream);
 	}
 
 	void load(std::istream& istream)
 	{
 		load_props(istream);
+
+		if (properties.length() > __capacity)
+		{
+			realloc();
+		}
+
 		load_data(istream);
 	}
 };

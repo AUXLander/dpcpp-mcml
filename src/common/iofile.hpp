@@ -25,7 +25,7 @@ struct iofile
 
 	using file_handler = std::unique_ptr<std::fstream, close_file_deleter>;
 
-	std::string timestring(std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
+	static std::string timestring(std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
 	{
 		auto in_time_t = std::chrono::system_clock::to_time_t(time);
 
@@ -36,25 +36,25 @@ struct iofile
 		return ss.str();
 	}
 
-	file_handler open(const char* path, std::ios_base::openmode mode)
+	static file_handler open(const char* path, std::ios_base::openmode mode)
 	{
 		return file_handler{ new std::fstream(path, std::ios_base::binary | mode) };
 	}
 
-	file_handler open(const char* path)
+	static file_handler open(const char* path)
 	{
-		return open(path, std::ios_base::out);
+		return open(path, std::ios_base::out | std::ios_base::in);
 	}
 
-	file_handler open()
+	static file_handler open()
 	{
 		auto name = std::string("snapshot-") + timestring() + ".bin";
 
-		return open(name.c_str(), std::ios_base::out);
+		return open(name.c_str(), std::ios_base::out | std::ios_base::in);
 	}
 
 	template<typename Tpipe>
-	void import_file(Tpipe& pipe, file_handler& file)
+	static void import_file(Tpipe& pipe, file_handler& file)
 	{
 		assert(file);
 		assert(file->is_open());
@@ -66,7 +66,7 @@ struct iofile
 	}
 
 	template<typename Tpipe>
-	void export_file(const Tpipe& pipe, file_handler& file)
+	static void export_file(const Tpipe& pipe, file_handler& file)
 	{
 		assert(file);
 		assert(file->is_open());
