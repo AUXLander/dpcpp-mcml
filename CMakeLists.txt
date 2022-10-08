@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.21.0 FATAL_ERROR)
 
 set(PROJECT_NAME dpcpp-mcml)
+set(MCML_EMULATOR mcml-emulator)
+set(MCML_GL_VIEW mcml-gl-view)
 
 project(${PROJECT_NAME})
 
@@ -17,12 +19,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # enable DPC++ snippet
 # find_package(IntelDPCPP REQUIRED)
 
+
+# add executable MCML_EMULATOR
 add_executable(
-	${PROJECT_NAME}
+	${MCML_EMULATOR}
  
-      src/main.cpp 
-      src/mcml.hpp
-      src/matrix.hpp
-	src/iofile.hpp
-	src/pipe.hpp
+      src/emulator/main.cpp 
+      src/emulator/mcml.hpp
+      src/common/matrix.hpp
+	src/common/iofile.hpp
+	src/common/pipe.hpp
 )
+
+

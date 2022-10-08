@@ -4,13 +4,13 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include "matrix.hpp"
-#include "iofile.hpp"
+
+#include "../common/matrix.hpp"
+#include "../common/iofile.hpp"
+
 #include "mcml.hpp"
 
 iofile fmanager;
-
-using atomic_array_ref = sycl::atomic_ref<int, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>;
 
 static auto exception_handler = [](sycl::exception_list e_list)
 {
