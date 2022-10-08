@@ -43,14 +43,14 @@ struct iofile
 
 	static file_handler open(const char* path)
 	{
-		return open(path, std::ios_base::out | std::ios_base::in);
+		return open(path, std::ios_base::out);
 	}
 
 	static file_handler open()
 	{
 		auto name = std::string("snapshot-") + timestring() + ".bin";
 
-		return open(name.c_str(), std::ios_base::out | std::ios_base::in);
+		return open(name.c_str(), std::ios_base::out);
 	}
 
 	template<typename Tpipe>
