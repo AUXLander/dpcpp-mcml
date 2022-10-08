@@ -145,7 +145,6 @@ int main(int argc, char* argv[])
         q.wait();
     
         int index = 0;
-        int l = 0;
 
         for (int y = 0; y < host_view.properties.size_y(); ++y)
         {
@@ -155,7 +154,10 @@ int main(int argc, char* argv[])
 
                 for (int z = 0; z < host_view.properties.size_z(); ++z)
                 {
-                    v += host_view.at(x, y, z, l);
+                    for (int l = 0; l < host_view.properties.size_l(); ++l)
+                    {
+                        v += host_view.at(x, y, z, l);
+                    }
                 }
 
                 std::cout << std::setw(8) << v << ' ';

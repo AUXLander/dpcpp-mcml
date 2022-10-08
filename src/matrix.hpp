@@ -19,21 +19,19 @@ public:
 
 	constexpr size_t index(size_t x, size_t y, size_t z, size_t l) const noexcept
 	{
-		x %= __size_x;
-		y %= __size_y;
-		z %= __size_z;
-		l %= __size_l;
+		size_t lspec, index;
+		
+		lspec  = 1U;
+		index  = lspec * (x % __size_x);
 
-		size_t index = x;
-		size_t lspec = __size_y;
-
-		index += lspec * y;
 		lspec *= __size_x;
+		index += lspec * (y % __size_y);
 
-		index += lspec * z;
+		lspec *= __size_y;
+		index += lspec * (z % __size_z);
+
 		lspec *= __size_z;
-
-		index += lspec * l;
+		index += lspec * (l % __size_l);
 
 		return index;
 	}
@@ -183,8 +181,8 @@ public:
 		__view(view)
 	{;}
 
-	matrix_view_adaptor(matrix_view_adaptor&) = default;
-	matrix_view_adaptor(matrix_view_adaptor&&) noexcept = default;
+	matrix_view_adaptor(matrix_view_adaptor<T>&) = default;
+	matrix_view_adaptor(matrix_view_adaptor<T>&&) noexcept = default;
 
 	T& at(double x, double y, double z, size_t l)
 	{
