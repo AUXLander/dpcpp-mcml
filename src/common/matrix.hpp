@@ -1,6 +1,7 @@
 #pragma once
 #include <cassert>
 #include <iostream>
+#include <tuple>
 #include "pipe.hpp"
 
 class matrix_properties
@@ -14,6 +15,8 @@ public:
 	constexpr matrix_properties(size_t width, size_t height, size_t depth, size_t layer) :
 		__size_x(width), __size_y(height), __size_z(depth), __size_l(layer)
 	{;}
+
+	constexpr matrix_properties(const matrix_properties&) = default;
 
 	size_t index(size_t x, size_t y, size_t z, size_t l) const noexcept
 	{
@@ -54,6 +57,11 @@ public:
 		return __size_l;
 	}
 
+	constexpr auto size() const noexcept
+	{
+		return std::tuple{ __size_x, __size_y, __size_z, __size_l };
+	}
+
 	constexpr size_t length() const noexcept
 	{
 		return __size_x * __size_y * __size_z * __size_l;
@@ -82,19 +90,19 @@ class raw_memory_matrix_view
 	matrix_properties __props;
 
 protected:
-	T*                __data {nullptr};
-
-public:
-
-	const matrix_properties& properties;
+	T*                __data{ nullptr };
 
 protected:
 	raw_memory_matrix_view() :
-		__props{ 0, 0, 0, 0 }, __data{ nullptr }, properties{ __props }
+		__props{ 0, 0, 0, 0 }, __data{ nullptr }
+	{;}
+
+	raw_memory_matrix_view(raw_memory_matrix_view<T>& other) :
+		__props { other.__props }, __data { other.__data }
 	{;}
 
 	raw_memory_matrix_view(size_t width, size_t height, size_t depth, size_t count_of_layers) :
-		__props{ width, height, depth, count_of_layers }, __data{ nullptr }, properties{ __props }
+		__props{ width, height, depth, count_of_layers }, __data{ nullptr }
 	{;}
 
 	void load_props(std::istream& istream)
@@ -114,7 +122,7 @@ protected:
 
 public:
 	raw_memory_matrix_view(T* data, size_t width, size_t height, size_t depth, size_t count_of_layers) :
-		__props{ width, height, depth, count_of_layers }, __data{ data }, properties{ __props }
+		__props{ width, height, depth, count_of_layers }, __data{ data }
 	{
 		assert(__data);
 	}
@@ -135,6 +143,11 @@ public:
 				}
 			}
 		}
+	}
+
+	inline T* data()
+	{
+		return __data;
 	}
 
 	inline T& at(size_t x, size_t y, size_t z, size_t l)
@@ -167,30 +180,81 @@ public:
 		save_props(ostream);
 		save_data(ostream);
 	}
+
+	const matrix_properties& properties() const
+	{
+		return __props;
+	}
+
+	const size_t size_of_data() const noexcept
+	{
+		return __props.length() * sizeof(T);
+	}
 };
 
 template<class T>
+class default_matrix_allocator
+{
+	default_matrix_allocator<T>(default_matrix_allocator<T>&) = default;
+
+	T* allocate(size_t size)
+	{
+		return new T[size]{ static_cast<T>(0) };
+	}
+
+	void free(T* data)
+	{
+		assert(data);
+
+		if (data)
+		{
+			delete[] data;
+		}
+	}
+};
+
+template<class T, class Tallocator = default_matrix_allocator<T>>
 class memory_matrix_view : public raw_memory_matrix_view<T>
 {
-	std::unique_ptr<T> __data_owner { nullptr };
-	size_t             __capacity   { 0U };
+	template<class Talloc>
+	class deleter
+	{
+		Talloc& __allocator;
+	public:
+		deleter(Talloc& allocator) :
+			__allocator{ allocator }
+		{;}
+
+		void operator()(T* data)
+		{
+			__allocator.free(data);
+		}
+	};
+
+	Tallocator		                         __allocator;
+	deleter<Tallocator>				         __deleter;
+	size_t                                   __capacity;
+	std::unique_ptr<T, deleter<Tallocator>&> __data_owner;
 
 	void realloc()
 	{
-		__capacity = properties.length();
-		__data_owner.reset(new T[__capacity]{ T(0) });
+		__capacity = properties().length();
+		__data_owner.reset(__allocator.allocate(__capacity));
 		__data = __data_owner.get();
 	}
 
 public:
-	memory_matrix_view() : 
+	memory_matrix_view(Tallocator& allocator = Tallocator()) :
 		raw_memory_matrix_view<T>(),
-		__data_owner { nullptr },
-		__capacity { 0U }
+		__allocator{ allocator },
+		__capacity{ 0U },
+		__data_owner { nullptr, __allocator }
 	{;}
 
-	memory_matrix_view(size_t width, size_t height, size_t depth, size_t count_of_layers) :
-		raw_memory_matrix_view<T>(width, height, depth, count_of_layers)
+	memory_matrix_view(size_t width, size_t height, size_t depth, size_t count_of_layers, Tallocator& allocator = Tallocator()) :
+		raw_memory_matrix_view<T>(width, height, depth, count_of_layers), 
+		__allocator { allocator }, __deleter { __allocator }, __capacity{0U},
+		__data_owner{ nullptr, __deleter }
 	{
 		realloc();
 	}
@@ -239,9 +303,11 @@ public:
 
 	T& at(double x, double y, double z, size_t l)
 	{
-		double x_step = (x_max - x_min) / __view.properties.size_x();
-		double y_step = (y_max - y_min) / __view.properties.size_y();
-		double z_step = (z_max - z_min) / __view.properties.size_z();
+		auto [size_x, size_y, size_z, size_l] = __view.properties().size();
+
+		double x_step = (x_max - x_min) / static_cast<double>(size_x);
+		double y_step = (y_max - y_min) / static_cast<double>(size_y);
+		double z_step = (z_max - z_min) / static_cast<double>(size_z);
 
 		size_t __x = static_cast<size_t>((x - x_min) / x_step);
 		size_t __y = static_cast<size_t>((y - y_min) / y_step);

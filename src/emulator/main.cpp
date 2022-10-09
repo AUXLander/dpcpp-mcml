@@ -38,6 +38,38 @@ public:
     }
 };
 
+template<class T>
+struct sycl_host_matrix_allocator
+{
+    sycl::queue& queue;
+
+    sycl_host_matrix_allocator<T>(sycl::queue& queue) :
+        queue{ queue }
+    {;}
+
+    sycl_host_matrix_allocator<T>(sycl_host_matrix_allocator<T>& other) :
+        queue{ other.queue }
+    {;}
+
+    T* allocate(size_t size)
+    {
+        return sycl::malloc_host<float>(size, queue);
+    }
+
+    void free(T* data)
+    {
+        assert(data);
+
+        if (data)
+        {
+            sycl::free(data, queue);
+        }
+    }
+};
+
+template<class T>
+using host_matrix_view = memory_matrix_view<T, sycl_host_matrix_allocator<T>>;
+
 int main(int argc, char* argv[])
 {
     // cuda_selector d_selector;
@@ -54,24 +86,26 @@ int main(int argc, char* argv[])
     {
         sycl::queue q(d_selector, exception_handler);
 
+        sycl_host_matrix_allocator<float> allocator(q);
+
         constexpr size_t N_x = 10;
         constexpr size_t N_y = 10;
         constexpr size_t N_z = 10;
         constexpr size_t N_l = 7;
 
-        constexpr size_t N = N_x * N_y * N_z * N_l;
         constexpr size_t work_group_size = 256;
         constexpr size_t num_groups = 256;
 
-        int* host_data = sycl::malloc_host<int>(N, q);
-        int* device_data = sycl::malloc_device<int>(N, q);
-        int* device_group_data_pool = sycl::malloc_device<int>(N * num_groups, q);
+        host_matrix_view<float> host_view(N_x, N_y, N_z, N_l, allocator);
 
-        raw_memory_matrix_view<int> host_view(host_data, N_x, N_y, N_z, N_l);
+        size_t N = host_view.properties().length();
+
+        float* device_data = sycl::malloc_device<float>(N, q);
+        float* device_group_data_pool = sycl::malloc_device<float>(N * num_groups, q);
 
         InputStruct input;
 
-        input.layerspecs = sycl::malloc_shared<LayerStruct>(7, q);
+        input.layerspecs = sycl::malloc_shared<LayerStruct>(N_l, q);
 
         configure_input(input);
         configure(input.layerspecs, q);
@@ -87,7 +121,7 @@ int main(int argc, char* argv[])
                         size_t gid = g.get_group_id(0); // work group index
 
                         // select from allocated memory on device
-                        int* data = device_group_data_pool + N * gid;
+                        float* data = device_group_data_pool + N * gid;
 
                         for (int i = 0; i < N; ++i)
                         {
@@ -97,7 +131,7 @@ int main(int argc, char* argv[])
                         g.parallel_for_work_item(
                             [&](sycl::h_item<1> item)
                             {
-                                raw_memory_matrix_view<int> view(data, N_x, N_y, N_z, N_l);
+                                raw_memory_matrix_view<float> view(data, N_x, N_y, N_z, N_l);
 
                                 PhotonStruct photon(view, input, input.layerspecs);
 
@@ -131,7 +165,7 @@ int main(int argc, char* argv[])
 
                 for (size_t gid = 0; gid < num_groups; ++gid)
                 {
-                    int* data = device_group_data_pool + N * gid;
+                    float* data = device_group_data_pool + N * gid;
 
                     summ += data[idx];
                 }
@@ -142,29 +176,27 @@ int main(int argc, char* argv[])
 
         q.wait();
 
-        q.memcpy(host_data, device_data, sizeof(int) * N);
+        q.memcpy(host_view.data(), device_data, host_view.size_of_data());
 
         q.wait();
-    
-        int index = 0;
 
-        for (int y = 0; y < host_view.properties.size_y(); ++y)
+        auto [size_x, size_y, size_z, size_l] = host_view.properties().size();
+
+        for (size_t y = 0; y < size_y; ++y)
         {
-            for (int x = 0; x < host_view.properties.size_x(); ++x)
+            for (size_t x = 0; x < size_x; ++x)
             {
-                int v = 0;
+                float v = 0.0F;
 
-                for (int z = 0; z < host_view.properties.size_z(); ++z)
+                for (size_t z = 0; z < size_z; ++z)
                 {
-                    for (int l = 0; l < host_view.properties.size_l(); ++l)
+                    for (size_t l = 0; l < size_l; ++l)
                     {
                         v += host_view.at(x, y, z, l);
                     }
                 }
 
                 std::cout << std::setw(8) << v << ' ';
-
-                ++index;
             }
 
             std::cout << '\n';
@@ -177,7 +209,6 @@ int main(int argc, char* argv[])
         }
 
         sycl::free(input.layerspecs, q);
-        sycl::free(host_data, q);
         sycl::free(device_data, q);
         sycl::free(device_group_data_pool, q);
     }

@@ -6,7 +6,7 @@
 #include "../common/matrix.hpp"
 #include "../common/iofile.hpp"
 
-using atomic_array_ref = sycl::atomic_ref<int, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>;
+using atomic_array_ref = sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>;
 
 // #define PARTIALREFLECTION 0
   /* 1=split photon, 0=statistical reflection. */
@@ -179,19 +179,19 @@ struct PhotonStruct
 
 	const LayerStruct* layerspecs;
 
-	matrix_view_adaptor<int> view;
+	matrix_view_adaptor<float> view;
 
-	PhotonStruct(matrix_view_adaptor<int> view, const InputStruct& input, const LayerStruct* l) :
+	PhotonStruct(matrix_view_adaptor<float> view, const InputStruct& input, const LayerStruct* l) :
 		engine{0, 100}, distr{ 0.0, 1.0 }, input{ input }, layerspecs{ l }, view(view)
 	{;}
 
 	~PhotonStruct() = default;
 
-	void track()
+	void track(float weight = 1.0F)
 	{
 		auto v = atomic_array_ref(view.at(this->x, this->y, this->z, this->layer));
 
-		v.fetch_add(1);
+		v.fetch_add(weight);
 	}
 
 
