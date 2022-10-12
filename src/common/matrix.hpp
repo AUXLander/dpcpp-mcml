@@ -4,6 +4,8 @@
 #include <tuple>
 #include "pipe.hpp"
 
+#undef __allocator
+
 class matrix_properties
 {
 	size_t __size_x;
@@ -193,7 +195,7 @@ public:
 };
 
 template<class T>
-class default_matrix_allocator
+struct default_matrix_allocator
 {
 	default_matrix_allocator<T>(default_matrix_allocator<T>&) = default;
 
@@ -244,11 +246,20 @@ class memory_matrix_view : public raw_memory_matrix_view<T>
 	}
 
 public:
-	memory_matrix_view(Tallocator& allocator = Tallocator()) :
+	memory_matrix_view() :
 		raw_memory_matrix_view<T>(),
-		__allocator{ allocator },
+		__allocator{ },
+		__deleter{ __allocator },
 		__capacity{ 0U },
-		__data_owner { nullptr, __allocator }
+		__data_owner{ nullptr, __deleter }
+	{;}
+
+	memory_matrix_view(Tallocator& allocator) :
+		raw_memory_matrix_view<T>(),
+		__allocator{ allocator }, 
+		__deleter{ __allocator },
+		__capacity{ 0U },
+		__data_owner { nullptr, __deleter }
 	{;}
 
 	memory_matrix_view(size_t width, size_t height, size_t depth, size_t count_of_layers, Tallocator& allocator = Tallocator()) :
@@ -269,7 +280,7 @@ public:
 	{
 		load_props(istream);
 
-		if (properties.length() > __capacity)
+		if (properties().length() > __capacity)
 		{
 			realloc();
 		}
