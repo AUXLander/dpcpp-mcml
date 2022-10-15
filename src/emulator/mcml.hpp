@@ -161,9 +161,95 @@ double RFresnel(double n1, double n2, double ca1, double& ca2_Ptr)
 
 struct PhotonStruct
 {
+	template<class T>
+	class weight_tracker
+	{
+		double __weight;
+
+		matrix_view_adaptor<T>& __view;
+
+		PhotonStruct& __ps;
+
+	public:
+
+		weight_tracker(PhotonStruct& ps, double weight, matrix_view_adaptor<T>& view) :
+			__ps{ ps },
+			__weight{ weight }, __view{ view }
+		{;}
+
+		weight_tracker<T>& operator=(const double& value)
+		{
+			__weight = value;
+
+			return *this;
+		}
+
+		weight_tracker<T>& operator+=(const double& value)
+		{
+			return &this;
+		}
+
+		weight_tracker<T>& operator-=(const double& value)
+		{
+			auto v = atomic_array_ref(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer));
+
+			v.fetch_add(value);
+
+			__weight -= value;
+
+			return *this;
+		}
+
+		weight_tracker<T>& operator/=(const double& value)
+		{
+			auto v = atomic_array_ref(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer));
+
+			auto old_weight = __weight;
+			__weight /= value;
+
+			v.fetch_add(old_weight - __weight);
+
+			return *this;
+		}
+
+		weight_tracker<T>& operator*=(const double& value)
+		{
+			auto v = atomic_array_ref(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer));
+
+			auto old_weight = __weight;
+			__weight *= value;
+
+			v.fetch_add(old_weight - __weight);
+
+			return *this;
+		}
+
+		inline double operator*(const double& value) const
+		{
+			return __weight * value;
+		}
+
+		inline bool operator==(const double& value) const
+		{
+			return __weight == value;
+		}
+
+		inline bool operator!=(const double& value) const
+		{
+			return __weight != value;
+		}
+
+		inline bool operator<(const double& value) const
+		{
+			return __weight < value;
+		}
+	};
+
 	double x{ 0 }, y{ 0 }, z{ 0 };
 	double ux{ 0 }, uy{ 0 }, uz{ 0 };
-	double w{ 0 };
+	//double w{ 0 };
+
+	weight_tracker<float> w;
 
 	bool dead{ false };
 
@@ -182,6 +268,7 @@ struct PhotonStruct
 	matrix_view_adaptor<float> view;
 
 	PhotonStruct(matrix_view_adaptor<float> view, const InputStruct& input, const LayerStruct* l) :
+		w {*this, 0, view},
 		engine{0, 100}, distr{ 0.0, 1.0 }, input{ input }, layerspecs{ l }, view(view)
 	{;}
 
@@ -189,9 +276,9 @@ struct PhotonStruct
 
 	void track(float weight = 1.0F)
 	{
-		auto v = atomic_array_ref(view.at(this->x, this->y, this->z, this->layer));
+		//auto v = atomic_array_ref(view.at(this->x, this->y, this->z, this->layer));
 
-		v.fetch_add(weight);
+		//v.fetch_add(weight);
 	}
 
 

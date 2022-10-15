@@ -327,3 +327,30 @@ public:
 		return __view.at(__x, __y,__z, l);
 	}
 };
+
+struct matrix_utils
+{
+	template<class T>
+	static void normalize(raw_memory_matrix_view<T>& view)
+	{
+		T min = view.at(0, 0, 0, 0);
+		T max = view.at(0, 0, 0, 0);
+
+		view.for_each(
+			[&](size_t x, size_t y, size_t z, size_t l)
+			{
+				auto value = view.at(x, y, z, l);
+
+				min = std::min(min, value);
+				max = std::max(max, value);
+			});
+
+		view.for_each(
+			[&](size_t x, size_t y, size_t z, size_t l)
+			{
+				auto& value = view.at(x, y, z, l);
+
+				value = (value - min) / (max - min);
+			});
+	}
+};

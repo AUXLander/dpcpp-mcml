@@ -88,9 +88,9 @@ int main(int argc, char* argv[])
 
         sycl_host_matrix_allocator<float> allocator(q);
 
-        constexpr size_t N_x = 10;
-        constexpr size_t N_y = 10;
-        constexpr size_t N_z = 10;
+        constexpr size_t N_x = 100;
+        constexpr size_t N_y = 100;
+        constexpr size_t N_z = 100;
         constexpr size_t N_l = 7;
 
         constexpr size_t work_group_size = 256;
@@ -180,26 +180,31 @@ int main(int argc, char* argv[])
 
         q.wait();
 
+        matrix_utils::normalize(host_view);
+
         auto [size_x, size_y, size_z, size_l] = host_view.properties().size();
 
-        for (size_t y = 0; y < size_y; ++y)
+        if (size_x < 11 && size_y < 11 && size_z < 11)
         {
-            for (size_t x = 0; x < size_x; ++x)
+            for (size_t y = 0; y < size_y; ++y)
             {
-                float v = 0.0F;
-
-                for (size_t z = 0; z < size_z; ++z)
+                for (size_t x = 0; x < size_x; ++x)
                 {
-                    for (size_t l = 0; l < size_l; ++l)
+                    float v = 0.0F;
+
+                    for (size_t z = 0; z < size_z; ++z)
                     {
-                        v += host_view.at(x, y, z, l);
+                        for (size_t l = 0; l < size_l; ++l)
+                        {
+                            v += host_view.at(x, y, z, l);
+                        }
                     }
+
+                    std::cout << std::setw(8) << v << ' ';
                 }
 
-                std::cout << std::setw(8) << v << ' ';
+                std::cout << '\n';
             }
-
-            std::cout << '\n';
         }
 
         {
