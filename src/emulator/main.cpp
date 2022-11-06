@@ -88,9 +88,9 @@ int main(int argc, char* argv[])
 
         sycl_host_matrix_allocator<float> allocator(q);
 
-        constexpr size_t N_x = 100;
-        constexpr size_t N_y = 100;
-        constexpr size_t N_z = 100;
+        constexpr size_t N_x = 20;
+        constexpr size_t N_y = 20;
+        constexpr size_t N_z = 20;
         constexpr size_t N_l = 7;
 
         constexpr size_t work_group_size = 256;
@@ -133,11 +133,15 @@ int main(int argc, char* argv[])
                             {
                                 raw_memory_matrix_view<float> view(data, N_x, N_y, N_z, N_l);
 
-                                PhotonStruct photon(view, input, input.layerspecs);
+                                uint64_t thread_global_id = item.get_global_id();
+
+                                mcg59_t random_generator(42, thread_global_id, work_group_size * num_groups);
+
+                                PhotonStruct photon(random_generator, view, input, input.layerspecs);
 
                                 auto rsp = Rspecular(input.layerspecs);
 
-                                for (size_t j = 0; j < 1; ++j)
+                                for (size_t j = 0; j < 1000; ++j)
                                 {
                                     photon.init(rsp);
 
@@ -147,11 +151,6 @@ int main(int argc, char* argv[])
                                     } 
                                     while (!photon.dead);
                                 }
-
-                                // int i = item.get_global_id(0);
-                                // int i = item.get_local_id(); // work item index [0...work_group_size]
-                                // auto v = atomic_array_ref(view.at(i, gid, 0, 0));
-                                // v.fetch_add(1);
                             });
                     });
             });

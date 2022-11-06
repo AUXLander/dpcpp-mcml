@@ -21,6 +21,9 @@ constexpr double PI = 3.1415926;
 constexpr double WEIGHT = 1E-4;		/* Critical weight for roulette. */
 constexpr double CHANCE = 0.1; /* Chance of roulette survival. */
 
+constexpr double  MIN_DISTANCE = 1.0E-8;
+constexpr double  MIN_WEIGHT = 1.0E-8;
+
 template <typename T>
 inline T sgn(T val)
 {
@@ -41,6 +44,54 @@ inline T setsign(T value, bool sign)
 
 	return value;
 }
+
+struct mcg59_t
+{
+	constexpr static uint64_t MCG59_C = 302875106592253;
+	constexpr static uint64_t MCG59_M = 576460752303423488;
+	constexpr static uint64_t MCG59_DEC_M = 576460752303423487;
+
+	uint64_t value;
+	uint64_t offset;
+
+	mcg59_t(uint64_t seed, unsigned int id, unsigned int step)
+	{
+		uint64_t value = 2 * seed + 1;
+		uint64_t firstOffset = RaiseToPower(MCG59_C, id);
+		value = (value * firstOffset) & MCG59_DEC_M;
+
+		this->value = value;
+		this->offset = RaiseToPower(MCG59_C, step);
+	}
+
+	double next()
+	{
+		this->value = (this->value * this->offset) & MCG59_DEC_M;
+
+		return (double)(this->value) / MCG59_M;
+	}
+
+	uint64_t RaiseToPower(uint64_t argument, unsigned int power)
+	{
+		uint64_t result = 1;
+
+		while (power > 0)
+		{
+			if ((power & 1) == 0)
+			{
+				argument *= argument;
+				power >>= 1;
+			}
+			else
+			{
+				result *= argument;
+				--power;
+			}
+		}
+
+		return result;
+	}
+};
 
 struct LayerStruct
 {
@@ -186,14 +237,18 @@ struct PhotonStruct
 
 		weight_tracker<T>& operator+=(const double& value)
 		{
-			return &this;
+			atomic_array_ref atomic(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer));
+
+			atomic.fetch_add(std::abs(value));
+
+			return *this;
 		}
 
 		weight_tracker<T>& operator-=(const double& value)
 		{
-			auto v = atomic_array_ref(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer));
+			atomic_array_ref atomic(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer));
 
-			v.fetch_add(value);
+			atomic.fetch_add(std::abs(value));
 
 			__weight -= value;
 
@@ -202,24 +257,25 @@ struct PhotonStruct
 
 		weight_tracker<T>& operator/=(const double& value)
 		{
-			auto v = atomic_array_ref(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer));
+			atomic_array_ref atomic(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer));
 
 			auto old_weight = __weight;
 			__weight /= value;
 
-			v.fetch_add(old_weight - __weight);
+			atomic.fetch_add(std::abs(old_weight - __weight));
 
 			return *this;
 		}
 
 		weight_tracker<T>& operator*=(const double& value)
 		{
-			auto v = atomic_array_ref(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer));
+			atomic_array_ref atomic(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer));
 
 			auto old_weight = __weight;
+
 			__weight *= value;
 
-			v.fetch_add(old_weight - __weight);
+			atomic.fetch_add(std::abs(old_weight - __weight));
 
 			return *this;
 		}
@@ -245,9 +301,8 @@ struct PhotonStruct
 		}
 	};
 
-	double x{ 0 }, y{ 0 }, z{ 0 };
-	double ux{ 0 }, uy{ 0 }, uz{ 0 };
-	//double w{ 0 };
+	double x{ 0 }, y{ 0 }, z{ 0 };    // vector of position
+	double ux{ 0 }, uy{ 0 }, uz{ 0 }; // vector of direction
 
 	weight_tracker<float> w;
 
@@ -258,8 +313,7 @@ struct PhotonStruct
 	double sleft{ 0 };
 	double step_size{ 0 };
 
-	 oneapi::dpl::minstd_rand engine;
-	 oneapi::dpl::uniform_real_distribution<double> distr;
+	mcg59_t &random;
 
 	const InputStruct& input;
 
@@ -267,20 +321,14 @@ struct PhotonStruct
 
 	matrix_view_adaptor<float> view;
 
-	PhotonStruct(matrix_view_adaptor<float> view, const InputStruct& input, const LayerStruct* l) :
+	PhotonStruct(mcg59_t &random, matrix_view_adaptor<float> view, const InputStruct& input, const LayerStruct* l) :
 		w {*this, 0, view},
-		engine{0, 100}, distr{ 0.0, 1.0 }, input{ input }, layerspecs{ l }, view(view)
+		random { random },
+		//engine{0, 100}, distr{ 0.0, 1.0 }, 
+		input{ input }, layerspecs{ l }, view(view)
 	{;}
 
 	~PhotonStruct() = default;
-
-	void track(float weight = 1.0F)
-	{
-		//auto v = atomic_array_ref(view.at(this->x, this->y, this->z, this->layer));
-
-		//v.fetch_add(weight);
-	}
-
 
 	void init(const double Rspecular)
 	{
@@ -292,7 +340,7 @@ struct PhotonStruct
 
 		x = 0.0; // COORD CHANGE
 		y = 0.0;
-		z = 0.0;
+		z = MIN_DISTANCE;
 
 		ux = 0.0;
 		uy = 0.0;
@@ -303,8 +351,6 @@ struct PhotonStruct
 			layer = 2; // LAYER CHANGE
 			z = layerspecs[2].z0;
 		}
-
-		track();
 	}
 
 	void spin(const double anisotropy)
@@ -346,7 +392,18 @@ struct PhotonStruct
 		y += step_size * uy;
 		z += step_size * uz;
 
-		track();
+		w += MIN_WEIGHT;
+	}
+
+	void move_photon_min_distance()
+	{
+		// COORD CHANGE
+
+		x += MIN_DISTANCE * ux;
+		y += MIN_DISTANCE * uy;
+		z += MIN_DISTANCE * uz;
+
+		w += MIN_WEIGHT;
 	}
 
 	void step_size_in_glass()
@@ -485,7 +542,7 @@ struct PhotonStruct
 				uy *= ni / nt;
 				uz = -uz1;
 
-				track();
+				move_photon_min_distance();
 			}
 		}
 		else
@@ -526,7 +583,7 @@ struct PhotonStruct
 				uy *= ni / nt;
 				uz = uz1;
 
-				track();
+				move_photon_min_distance();
 			}
 		}
 		else
@@ -646,7 +703,7 @@ struct PhotonStruct
 
 	inline double get_random()
 	{
-		return distr(engine);
+		return random.next();
 	}
 };
 
