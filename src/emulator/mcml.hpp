@@ -158,56 +158,50 @@ struct InputStruct
 	}
 };
 
-double RFresnel(double n1, double n2, double ca1, double& ca2_Ptr)
+double RFresnel(double incidentRefractiveIndex, double transmitRefractiveIndex, double incidentCos, double &transmitCos)
 {
-	double r;
+	double reflectance;
 
-	if (n1 == n2)
+	if (incidentRefractiveIndex == transmitRefractiveIndex)
 	{
-		ca2_Ptr = ca1;
-		r = 0.0;
+		transmitCos = incidentCos;
+		reflectance = 0.0;
 	}
-	else if (ca1 > COSZERO)
+	else if (incidentCos > COSZERO)
 	{
-		ca2_Ptr = ca1;
-		r = (n2 - n1) / (n2 + n1);
-		r *= r;
+		transmitCos = incidentCos;
+		reflectance = (transmitRefractiveIndex - incidentRefractiveIndex) / (transmitRefractiveIndex + incidentRefractiveIndex);
+		reflectance *= reflectance;
 	}
-	else if (ca1 < COS90D)
+	else if (incidentCos < COS90D)
 	{
-		ca2_Ptr = 0.0;
-		r = 1.0;
+		transmitCos = 0.0;
+		reflectance = 1.0;
 	}
 	else
 	{
-		double sa1, sa2;
-		double ca2;
+		double incidentSin = std::sqrt(1.0 - incidentCos * incidentCos);
+		double transmitSin = incidentRefractiveIndex * incidentSin / transmitRefractiveIndex;
 
-		sa1 = std::sqrt(1.0 - ca1 * ca1);
-		sa2 = n1 * sa1 / n2;
-
-		if (sa2 >= 1.0)
+		if (transmitSin >= 1.0)
 		{
-			ca2_Ptr = 0.0;
-			r = 1.0;
+			transmitCos = 0.0;
+			reflectance = 1.0;
 		}
 		else
 		{
-			double cap, cam;
-			double sap, sam;
+			transmitCos = std::sqrt(1.0 - transmitSin * transmitSin);
 
-			ca2_Ptr = ca2 = std::sqrt(1.0 - sa2 * sa2);
+			double cap = incidentCos * transmitCos - incidentSin * transmitSin; /* c+ = cc - ss. */
+			double cam = incidentCos * transmitCos + incidentSin * transmitSin; /* c- = cc + ss. */
+			double sap = incidentSin * transmitCos + incidentCos * transmitSin; /* s+ = sc + cs. */
+			double sam = incidentSin * transmitCos - incidentCos * transmitSin; /* s- = sc - cs. */
 
-			cap = ca1 * ca2 - sa1 * sa2; /* c+ = cc - ss. */
-			cam = ca1 * ca2 + sa1 * sa2; /* c- = cc + ss. */
-			sap = sa1 * ca2 + ca1 * sa2; /* s+ = sc + cs. */
-			sam = sa1 * ca2 - ca1 * sa2; /* s- = sc - cs. */
-
-			r = 0.5 * sam * sam * (cam * cam + cap * cap) / (sap * sap * cam * cam);
+			reflectance = 0.5 * sam * sam * (cam * cam + cap * cap) / (sap * sap * cam * cam);
 		}
 	}
 
-	return r;
+	return reflectance;
 }
 
 struct PhotonStruct
@@ -365,13 +359,24 @@ struct PhotonStruct
 		const double psi = 2.0 * PI * get_random();
 
 		const double cosp = std::cos(psi);
-		const double sinp = setsign<double, uint64_t>(std::sqrt(1.0 - cosp * cosp), psi < PI);
+		double sinp; // = std::sin(psi);
 
-		if (fabs(uz) > COSZERO)
+		if (psi < PI)
 		{
+			sinp = std::sqrt(1.0 - cosp * cosp);
+		}
+		else
+		{
+			sinp = -std::sqrt(1.0 - cosp * cosp);
+		}
+
+		if (std::abs(uz) > COSZERO)
+		{
+			const double temp = (uz >= 0.0) ? 1.0 : -1.0;
+
 			this->ux = sint * cosp;
 			this->uy = sint * sinp;
-			this->uz = cost * sgn(uz);
+			this->uz = temp * cost;
 		}
 		else
 		{
@@ -439,15 +444,19 @@ struct PhotonStruct
 			dl_b = (olayer.z0 - z) / uz;
 		}
 
-		const bool hit = (uz != 0.0 && step_size > dl_b);
-
-		if (hit)
+		if (uz != 0.0 && step_size > dl_b)
 		{
-			sleft = (step_size - dl_b) * (olayer.mua + olayer.mus);
-			step_size = dl_b;
-		}
+			const double mut = olayer.mua + olayer.mus;
 
-		return hit;
+			sleft = (step_size - dl_b) * mut;
+			step_size = dl_b;
+
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 
 	void roulette()
@@ -533,6 +542,8 @@ struct PhotonStruct
 				uz = -uz1;
 				record_r(0.0);
 				dead = true;
+
+				move_photon_min_distance();
 			}
 			else
 			{
@@ -548,6 +559,8 @@ struct PhotonStruct
 		else
 		{
 			uz = -uz;
+
+			move_photon_min_distance();
 		}
 	}
 
@@ -574,6 +587,8 @@ struct PhotonStruct
 				uz = uz1;
 				record_t(0.0);
 				dead = true;
+
+				move_photon_min_distance();
 			}
 			else
 			{
@@ -589,6 +604,8 @@ struct PhotonStruct
 		else
 		{
 			uz = -uz;
+
+			move_photon_min_distance();
 		}
 	}
 
@@ -675,16 +692,14 @@ struct PhotonStruct
 				sleft = 0.0;
 			}
 
-			const auto hit = hit_boundary();
-
-			hop();
-
-			if (hit)
+			if (hit_boundary())
 			{
+				hop();
 				cross_or_not();
 			}
 			else
 			{
+				hop();
 				drop();
 				spin(olayer.anisotropy);
 			}

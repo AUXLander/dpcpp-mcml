@@ -88,9 +88,9 @@ int main(int argc, char* argv[])
 
         sycl_host_matrix_allocator<float> allocator(q);
 
-        constexpr size_t N_x = 20;
-        constexpr size_t N_y = 20;
-        constexpr size_t N_z = 20;
+        constexpr size_t N_x = 100;
+        constexpr size_t N_y = 100;
+        constexpr size_t N_z = 100;
         constexpr size_t N_l = 7;
 
         constexpr size_t work_group_size = 256;
