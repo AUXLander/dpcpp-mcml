@@ -23,9 +23,9 @@ public:
 	size_t index(size_t x, size_t y, size_t z, size_t l) const noexcept
 	{
 		size_t lspec, index;
-		
-		lspec  = 1U;
-		index  = lspec * (x % __size_x);
+
+		lspec = 1U;
+		index = lspec * (x % __size_x);
 
 		lspec *= __size_x;
 		index += lspec * (y % __size_y);
@@ -122,6 +122,21 @@ protected:
 		);
 	}
 
+	void save_props(std::ostream& ostream) const
+	{
+		__props.save(ostream);
+	}
+
+	void save_data(std::ostream& ostream) const
+	{
+		for_each(
+			[&](size_t x, size_t y, size_t z, size_t l)
+			{
+				pipe_utils::save_value(ostream, at(x, y, z, l));
+			}
+		);
+	}
+
 public:
 	raw_memory_matrix_view(T* data, size_t width, size_t height, size_t depth, size_t count_of_layers) :
 		__props{ width, height, depth, count_of_layers }, __data{ data }
@@ -132,13 +147,15 @@ public:
 	template<class Tlambda>
 	void for_each(Tlambda&& for_cell) const
 	{
-		for (size_t l = 0; l < __props.size_l(); ++l)
+		auto [size_x, size_y, size_z, size_l] = __props.size();
+
+		for (size_t l = 0; l < size_l; ++l)
 		{
-			for (size_t z = 0; z < __props.size_z(); ++z)
+			for (size_t z = 0; z < size_z; ++z)
 			{
-				for (size_t y = 0; y < __props.size_y(); ++y)
+				for (size_t y = 0; y < size_y; ++y)
 				{
-					for (size_t x = 0; x < __props.size_x(); ++x)
+					for (size_t x = 0; x < size_x; ++x)
 					{
 						for_cell(x, y, z, l);
 					}
@@ -160,21 +177,6 @@ public:
 	inline T& at(size_t x, size_t y, size_t z, size_t l) const
 	{
 		return __data[__props.index(x, y, z, l)];
-	}
-
-	void save_props(std::ostream& ostream) const
-	{
-		__props.save(ostream);
-	}
-
-	void save_data(std::ostream& ostream) const
-	{
-		for_each(
-			[&](size_t x, size_t y, size_t z, size_t l)
-			{
-				pipe_utils::save_value(ostream, at(x, y, z, l));
-			}
-		);
 	}
 
 	void save(std::ostream& ostream) const
@@ -309,14 +311,14 @@ class matrix_view_adaptor
 	}
 
 public:
-	constexpr static double x_min = -0.35; // -0.35;
-	constexpr static double x_max = +0.35; // +0.35;
+	constexpr static double x_min = -0.65; // -0.35;
+	constexpr static double x_max = +0.65; // +0.35;
 
-	constexpr static double y_min = -0.25; // -0.25;
-	constexpr static double y_max = +0.25; // +0.12;
+	constexpr static double y_min = -0.65; // -0.25;
+	constexpr static double y_max = +0.65; // +0.12;
 
-	constexpr static double z_min = -0.100; // -0.350;
-	constexpr static double z_max = +0.100; // +0.350;
+	constexpr static double z_min = -0.50; // -0.350;
+	constexpr static double z_max = +0.50; // +0.350;
 
 public:
 	matrix_view_adaptor(raw_memory_matrix_view<T>& view) :
@@ -334,10 +336,10 @@ public:
 		double y_step = (y_max - y_min) / static_cast<double>(size_y);
 		double z_step = (z_max - z_min) / static_cast<double>(size_z);
 
-		size_t __x = static_cast<size_t>((clamp(x - x_min, 0, x_max - x_min)) / x_step);
-		size_t __y = static_cast<size_t>((clamp(y - y_min, 0, y_max - y_min)) / y_step);
-		size_t __z = static_cast<size_t>((clamp(z - z_min, 0, z_max - z_min)) / z_step);
-		
+		size_t __x = static_cast<size_t>((x - x_min) / x_step);
+		size_t __y = static_cast<size_t>((y - y_min) / y_step);
+		size_t __z = static_cast<size_t>((z - z_min) / z_step);
+
 		return __view.at(__x, __y, __z, l);
 	}
 };
@@ -366,5 +368,47 @@ struct matrix_utils
 
 				value = (value - min) / (max - min);
 			});
+	}
+
+	template<class T>
+	static void normalize_v2(raw_memory_matrix_view<T>& view)
+	{
+		T min = view.at(0, 0, 0, 0);
+		T max = view.at(0, 0, 0, 0);
+		size_t zmin = 0;
+		size_t zmax = 0;
+
+		view.for_each(
+			[&](size_t x, size_t y, size_t z, size_t l)
+			{
+				max = std::max(max, view.at(x, y, z, l));
+			});
+
+		T log = std::log10f(max);
+
+		view.for_each(
+			[&](size_t x, size_t y, size_t z, size_t l)
+			{
+				auto& value = view.at(x, y, z, l);
+
+				value += 1.0;
+
+				min = std::min(min, value);
+
+				value = std::log10f(value) / log;
+
+				if (value > 0.1)
+				{
+					zmin = std::min(zmin, z);
+					zmax = std::max(zmax, z);
+				}
+
+			});
+
+		std::cout << "max: " << max << " log: " << std::log10f(max) << std::endl;
+		std::cout << "min: " << min << " log: " << std::log10f(min) << std::endl;
+
+		std::cout << "zmin: " << zmin << std::endl;
+		std::cout << "zmax: " << zmax << std::endl;
 	}
 };

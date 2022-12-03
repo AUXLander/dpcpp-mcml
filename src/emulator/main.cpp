@@ -91,10 +91,12 @@ int main(int argc, char* argv[])
         constexpr size_t N_x = 100;
         constexpr size_t N_y = 100;
         constexpr size_t N_z = 100;
-        constexpr size_t N_l = 7;
+        constexpr size_t N_l = 12;
+
+        constexpr size_t N_repeats = 8 * 1000;
 
         constexpr size_t work_group_size = 256;
-        constexpr size_t num_groups = 256;
+        constexpr size_t num_groups = 16;
 
         host_matrix_view<float> host_view(N_x, N_y, N_z, N_l, allocator);
 
@@ -141,14 +143,14 @@ int main(int argc, char* argv[])
 
                                 auto rsp = Rspecular(input.layerspecs);
 
-                                for (size_t j = 0; j < 1000; ++j)
+                                for (size_t j = 0; j < N_repeats; ++j)
                                 {
                                     photon.init(rsp);
 
                                     do
                                     {
                                         photon.hop_drop_spin();
-                                    } 
+                                    }
                                     while (!photon.dead);
                                 }
                             });
@@ -170,7 +172,6 @@ int main(int argc, char* argv[])
                 }
 
                 device_data[idx] = summ;
-
             });
 
         q.wait();
@@ -179,7 +180,8 @@ int main(int argc, char* argv[])
 
         q.wait();
 
-        matrix_utils::normalize(host_view);
+        // 
+        matrix_utils::normalize_v2(host_view);
 
         auto [size_x, size_y, size_z, size_l] = host_view.properties().size();
 
