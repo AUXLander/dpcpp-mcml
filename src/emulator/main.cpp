@@ -1,12 +1,12 @@
 #include <CL/sycl.hpp>
-#include <CL/sycl/backend/cuda.hpp>
+//#include <CL/sycl/backend/cuda.hpp>
 #include <vector>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 
-#include "../common/matrix.hpp"
-#include "../common/iofile.hpp"
+#include "matrix.hpp"
+#include "iofile.hpp"
 
 #include "mcml.hpp"
 

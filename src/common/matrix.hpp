@@ -1,5 +1,6 @@
 #pragma once
 #include <cassert>
+#include <cmath>
 #include <iostream>
 #include <tuple>
 #include "pipe.hpp"
@@ -87,7 +88,7 @@ public:
 };
 
 template<class T>
-class raw_memory_matrix_view
+struct raw_memory_matrix_view
 {
 	matrix_properties __props;
 
@@ -242,9 +243,9 @@ class memory_matrix_view : public raw_memory_matrix_view<T>
 
 	void realloc()
 	{
-		__capacity = properties().length();
+		__capacity = raw_memory_matrix_view<T>::__props.length();
 		__data_owner.reset(__allocator.allocate(__capacity));
-		__data = __data_owner.get();
+		raw_memory_matrix_view<T>::__data = __data_owner.get();
 	}
 
 public:
@@ -274,20 +275,20 @@ public:
 
 	void save(std::ostream& ostream) const
 	{
-		save_props(ostream);
-		save_data(ostream);
+		raw_memory_matrix_view<T>::save_props(ostream);
+		raw_memory_matrix_view<T>::save_data(ostream);
 	}
 
 	void load(std::istream& istream)
 	{
-		load_props(istream);
+		raw_memory_matrix_view<T>::load_props(istream);
 
-		if (properties().length() > __capacity)
+		if (raw_memory_matrix_view<T>::properties().length() > __capacity)
 		{
 			realloc();
 		}
 
-		load_data(istream);
+		raw_memory_matrix_view<T>::load_data(istream);
 	}
 };
 
@@ -384,7 +385,7 @@ struct matrix_utils
 				max = std::max(max, view.at(x, y, z, l));
 			});
 
-		T log = std::log10f(max);
+		T log = log10f(max);
 
 		view.for_each(
 			[&](size_t x, size_t y, size_t z, size_t l)
@@ -395,7 +396,7 @@ struct matrix_utils
 
 				min = std::min(min, value);
 
-				value = std::log10f(value) / log;
+				value = log10f(value) / log;
 
 				if (value > 0.1)
 				{
@@ -405,8 +406,8 @@ struct matrix_utils
 
 			});
 
-		std::cout << "max: " << max << " log: " << std::log10f(max) << std::endl;
-		std::cout << "min: " << min << " log: " << std::log10f(min) << std::endl;
+		std::cout << "max: " << max << " log: " << log10f(max) << std::endl;
+		std::cout << "min: " << min << " log: " << log10f(min) << std::endl;
 
 		std::cout << "zmin: " << zmin << std::endl;
 		std::cout << "zmax: " << zmax << std::endl;

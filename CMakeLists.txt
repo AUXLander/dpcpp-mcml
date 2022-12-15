@@ -7,8 +7,11 @@ set(MCML_GL_VIEW mcml-gl-view)
 project(${PROJECT_NAME})
 
 # Set DPC++ Compiler
-set(CMAKE_C_COMPILER icx)
-set(CMAKE_CXX_COMPILER icpx)
+#set(CMAKE_C_COMPILER icx)
+#set(CMAKE_CXX_COMPILER icpx)
+
+set(CMAKE_C_COMPILER ~/sycl/llvm/build/bin/clang++)
+set(CMAKE_CXX_COMPILER ~/sycl/llvm/build/bin/clang++)
 
 # Set default props for projects
 set(CMAKE_CXX_STANDARD 17)

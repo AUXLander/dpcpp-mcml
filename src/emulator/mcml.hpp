@@ -2,9 +2,9 @@
 #include <cmath>
 #include <random>
 #include <CL/sycl.hpp>
-#include <oneapi/dpl/random>
-#include "../common/matrix.hpp"
-#include "../common/iofile.hpp"
+//#include <oneapi/dpl/random>
+#include "matrix.hpp"
+#include "iofile.hpp"
 
 using atomic_array_ref = sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>;
 
