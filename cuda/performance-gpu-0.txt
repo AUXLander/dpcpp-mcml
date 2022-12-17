@@ -1,0 +1,285 @@
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 256
+   Number of groups: 16
+max: 483812 log: 5.68468
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	2m17.704s
+user	2m15.585s
+sys	0m0.260s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 256
+   Number of groups: 16
+max: 483812 log: 5.68468
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	2m17.687s
+user	2m15.500s
+sys	0m0.310s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 256
+   Number of groups: 16
+max: 483812 log: 5.68468
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	2m17.717s
+user	2m15.603s
+sys	0m0.280s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 256
+   Number of groups: 32
+max: 967741 log: 5.98576
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	4m30.679s
+user	4m28.300s
+sys	0m0.330s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 256
+   Number of groups: 32
+max: 967741 log: 5.98576
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	4m30.133s
+user	4m27.949s
+sys	0m0.310s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 256
+   Number of groups: 32
+max: 967741 log: 5.98576
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	4m30.191s
+user	4m28.034s
+sys	0m0.290s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 128
+   Number of groups: 16
+max: 241377 log: 5.3827
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	1m15.102s
+user	1m12.790s
+sys	0m0.379s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 128
+   Number of groups: 16
+max: 241377 log: 5.3827
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	1m16.033s
+user	1m13.878s
+sys	0m0.270s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 128
+   Number of groups: 16
+max: 241377 log: 5.3827
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	1m15.584s
+user	1m13.304s
+sys	0m0.310s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 128
+   Number of groups: 32
+max: 482723 log: 5.6837
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	2m19.022s
+user	2m16.794s
+sys	0m0.320s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 128
+   Number of groups: 32
+max: 482723 log: 5.6837
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	2m18.972s
+user	2m16.706s
+sys	0m0.320s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 128
+   Number of groups: 32
+max: 482723 log: 5.6837
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	2m18.994s
+user	2m16.766s
+sys	0m0.290s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 64
+   Number of groups: 16
+max: 120705 log: 5.08173
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	0m59.997s
+user	0m57.512s
+sys	0m0.310s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 64
+   Number of groups: 16
+max: 120705 log: 5.08173
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	0m59.255s
+user	0m56.991s
+sys	0m0.310s
+Name: NVIDIA GeForce RTX 3060
+Version: 0.0
+Vendor: NVIDIA Corporation
+Driver version: CUDA 12.0
+N_x dimensions of x: 100
+N_y dimensions of y: 100
+N_z dimensions of z: 100
+N_l count of layers: 12
+  Repeats per tread: 8000
+    Work group size: 64
+   Number of groups: 16
+max: 120705 log: 5.08173
+min: 0 log: -inf
+zmin: 0
+zmax: 69
+
+real	0m59.302s
+user	0m57.023s
+sys	0m0.270s
