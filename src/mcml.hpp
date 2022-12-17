@@ -255,22 +255,14 @@ struct PhotonStruct
 
 		weight_tracker<T>& operator/=(const double& value)
 		{
-			auto old_weight = __weight;
-
 			__weight /= value;
-
-			//__track(old_weight - __weight);
 
 			return *this;
 		}
 
 		weight_tracker<T>& operator*=(const double& value)
 		{
-			auto old_weight = __weight;
-
 			__weight *= value;
-
-			// __track(old_weight - __weight);
 
 			return *this;
 		}
@@ -298,7 +290,6 @@ struct PhotonStruct
 		inline void track()
 		{
 			//atomic_array_ref atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
-
 			//atomic.fetch_add(0.15);
 		}
 	};

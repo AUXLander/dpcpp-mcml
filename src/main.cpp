@@ -74,7 +74,9 @@ int main(int argc, char* argv[])
 {
     // cuda_selector d_selector;
     // sycl::cpu_selector d_selector;
+
     sycl::gpu_selector d_selector;
+
     auto dev = d_selector.select_device();
 
     std::cout << "Name: " << dev.get_info<cl::sycl::info::device::name>() << std::endl;
@@ -93,10 +95,20 @@ int main(int argc, char* argv[])
         constexpr size_t N_z = 100;
         constexpr size_t N_l = 12;
 
-        constexpr size_t N_repeats = 8 * 1000;
+        constexpr size_t N_repeats = 1 * 1000;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
 
-        constexpr size_t work_group_size = 256;
-        constexpr size_t num_groups = 16;
+        constexpr size_t work_group_size = 64; // 32;
+        constexpr size_t num_groups = 128;
+
+
+        std::cout << "N_x dimensions of x: " << N_x << std::endl;
+        std::cout << "N_y dimensions of y: " << N_y << std::endl;
+        std::cout << "N_z dimensions of z: " << N_z << std::endl;
+        std::cout << "N_l count of layers: " << N_l << std::endl;
+        std::cout << "  Repeats per tread: " << N_repeats << std::endl;
+        std::cout << "    Work group size: " << work_group_size << std::endl;
+        std::cout << "   Number of groups: " << num_groups << std::endl;
+
 
         host_matrix_view<float> host_view(N_x, N_y, N_z, N_l, allocator);
 
@@ -112,23 +124,29 @@ int main(int argc, char* argv[])
         configure_input(input);
         configure(input.layerspecs, q);
 
+        q.parallel_for(num_groups,
+            [=](auto group_index)
+            {
+                float* data = device_group_data_pool + N * group_index;
+                
+                for (int i = 0; i < N; ++i)
+                {
+                    data[i] = 0;
+                }
+            });
+
         q.submit(
             [&](sycl::handler& h) 
             {
                 sycl::stream output(1024, 256, h);
 
-                h.parallel_for_work_group(sycl::range<1>(num_groups), sycl::range<1>(work_group_size),
+                h.parallel_for_work_group<class PhotonKernel>(sycl::range<1>(num_groups), sycl::range<1>(work_group_size),
                     [=](sycl::group<1> g) 
                     {
                         size_t gid = g.get_group_id(0); // work group index
 
                         // select from allocated memory on device
                         float* data = device_group_data_pool + N * gid;
-
-                        for (int i = 0; i < N; ++i)
-                        {
-                            data[i] = 0;
-                        }
 
                         g.parallel_for_work_item(
                             [&](sycl::h_item<1> item)
