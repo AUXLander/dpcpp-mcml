@@ -142,6 +142,7 @@ struct InputStruct
 	short na;					/* array range 0..na-1. */
 
 	short	num_layers;			/* number of layers. */
+	short	num_output_layers;
 	LayerStruct* layerspecs{ nullptr };	/* layer parameters. */
 
 
@@ -149,7 +150,7 @@ struct InputStruct
 
 	InputStruct(const InputStruct&) = default;
 
-	void configure(short number_of_layers, LayerStruct* layerspecs_ptr = nullptr)
+	void configure(short number_of_layers, short number_of_output_layers, LayerStruct* layerspecs_ptr = nullptr)
 	{
 		InputStruct& input = *this;
 
@@ -162,6 +163,7 @@ struct InputStruct
 		input.nr = 500;
 		input.na = 100;
 		input.num_layers = number_of_layers;
+		input.num_output_layers = number_of_output_layers;
 
 		if (input.num_layers && layerspecs_ptr)
 		{
@@ -358,7 +360,7 @@ double RFresnel(double incidentRefractiveIndex, double transmitRefractiveIndex, 
 	}
 	else
 	{
-		double incidentSin = std::sqrt(1.0 - incidentCos * incidentCos);
+		double incidentSin = sycl::sqrt(1.0 - incidentCos * incidentCos);
 		double transmitSin = incidentRefractiveIndex * incidentSin / transmitRefractiveIndex;
 
 		if (transmitSin >= 1.0)
@@ -368,7 +370,7 @@ double RFresnel(double incidentRefractiveIndex, double transmitRefractiveIndex, 
 		}
 		else
 		{
-			transmitCos = std::sqrt(1.0 - transmitSin * transmitSin);
+			transmitCos = sycl::sqrt(1.0 - transmitSin * transmitSin);
 
 			double cap = incidentCos * transmitCos - incidentSin * transmitSin; /* c+ = cc - ss. */
 			double cam = incidentCos * transmitCos + incidentSin * transmitSin; /* c- = cc + ss. */
@@ -397,8 +399,13 @@ struct PhotonStruct
 
 			// atomic_array_ref atomic(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer));
 
+			//sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
+			//	atomic(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer % __ps.input.num_output_layers));
+
 			sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
 				atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
+
+			//__ps.input.num_output_layers
 
 			//sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::local_space>
 			//	atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
@@ -527,20 +534,22 @@ struct PhotonStruct
 		const double uz = this->uz;
 
 		const double cost = SpinTheta(anisotropy);
-		const double sint = std::sqrt(1.0 - cost * cost);
+		const double sint = sycl::sqrt(1.0 - cost * cost);
 
 		const double psi = 2.0 * PI * get_random();
 
-		const double cosp = std::cos(psi);
+		const double cosp = sycl::cos(psi);
+
+
 		double sinp; // = std::sin(psi);
 
 		if (psi < PI)
 		{
-			sinp = std::sqrt(1.0 - cosp * cosp);
+			sinp = sycl::sqrt(1.0 - cosp * cosp);
 		}
 		else
 		{
-			sinp = -std::sqrt(1.0 - cosp * cosp);
+			sinp = -sycl::sqrt(1.0 - cosp * cosp);
 		}
 
 		if (std::abs(uz) > COSZERO)
@@ -553,7 +562,7 @@ struct PhotonStruct
 		}
 		else
 		{
-			const double temp = std::sqrt(1.0 - uz * uz);
+			const double temp = sycl::sqrt(1.0 - uz * uz);
 
 			this->ux = sint * (ux * uz * cosp - uy * sinp) / temp + ux * cost;
 			this->uy = sint * (uy * uz * cosp + ux * sinp) / temp + uy * cost;
@@ -637,7 +646,7 @@ struct PhotonStruct
 	{
 		size_t ir, ia;
 
-		ir = static_cast<size_t>(std::sqrt(x * x + y * y) / input.dr);
+		ir = static_cast<size_t>(sycl::sqrt(x * x + y * y) / input.dr);
 		ir = std::min<size_t>(ir, input.nr - 1);
 
 		ia = static_cast<size_t>(std::acos(-uz) / input.da);
@@ -650,7 +659,7 @@ struct PhotonStruct
 	{
 		size_t ir, ia;
 
-		ir = static_cast<size_t>(std::sqrt(x * x + y * y) / input.dr);
+		ir = static_cast<size_t>(sycl::sqrt(x * x + y * y) / input.dr);
 		ir = std::min<size_t>(ir, input.nr - 1);
 
 		ia = static_cast<size_t>(std::acos(uz) / input.da);
@@ -668,7 +677,7 @@ struct PhotonStruct
 		iz = static_cast<size_t>(z / input.dz);
 		iz = std::min<size_t>(iz, input.nz - 1);
 
-		ir = static_cast<size_t>(std::sqrt(x * x + y * y) / input.dr);
+		ir = static_cast<size_t>(sycl::sqrt(x * x + y * y) / input.dr);
 		ir = std::min<size_t>(ir, input.nr - 1);
 
 		const auto& olayer = get_current_layer();
@@ -834,7 +843,7 @@ struct PhotonStruct
 					rnd = get_random();
 				} while (rnd <= 0.0);
 
-				step_size = -std::log(rnd) / (mua + mus);
+				step_size = -sycl::log(rnd) / (mua + mus);
 			}
 			else
 			{

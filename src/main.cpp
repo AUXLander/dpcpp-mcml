@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
 
         InputStruct input;
 
-        input.configure(number_of_layers, layerspecs.get());
+        input.configure(number_of_layers, N_l, layerspecs.get());
 
         // Вывод параметров записи результатов
         std::cout << "Image dimensions of x: " << N_x                 << std::endl;
