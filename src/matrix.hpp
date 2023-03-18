@@ -406,10 +406,10 @@ struct matrix_utils
 
 			});
 
-		std::cout << "max: " << max << " log: " << log10f(max) << std::endl;
-		std::cout << "min: " << min << " log: " << log10f(min) << std::endl;
+		//std::cout << "max: " << max << " log: " << log10f(max) << std::endl;
+		//std::cout << "min: " << min << " log: " << log10f(min) << std::endl;
 
-		std::cout << "zmin: " << zmin << std::endl;
-		std::cout << "zmax: " << zmax << std::endl;
+		//std::cout << "zmin: " << zmin << std::endl;
+		//std::cout << "zmax: " << zmax << std::endl;
 	}
 };
