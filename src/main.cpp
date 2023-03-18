@@ -29,31 +29,22 @@ static auto exception_handler = [](sycl::exception_list e_list)
     }
 };
 
-class cuda_selector : public sycl::device_selector {
-public:
-    int operator()(const sycl::device& device) const override 
-    {
-        return device.get_platform().get_backend() == sycl::backend::ext_oneapi_cuda;
-        //return device.is_gpu() && (device.get_info<sycl::info::device::driver_version>().find("CUDA") != std::string::npos);
-    }
-};
-
 template<class T>
-struct sycl_host_matrix_allocator
+struct sycl_host_allocator
 {
     sycl::queue& queue;
 
-    sycl_host_matrix_allocator<T>(sycl::queue& queue) :
+    sycl_host_allocator<T>(sycl::queue& queue) :
         queue{ queue }
     {;}
 
-    sycl_host_matrix_allocator<T>(sycl_host_matrix_allocator<T>& other) :
+    sycl_host_allocator<T>(sycl_host_allocator<T>& other) :
         queue{ other.queue }
     {;}
 
     T* allocate(size_t size)
     {
-        return sycl::malloc_host<float>(size, queue);
+        return sycl::malloc_host<T>(size, queue);
     }
 
     void free(T* data)
@@ -67,64 +58,229 @@ struct sycl_host_matrix_allocator
     }
 };
 
+struct sycl_base_allocator
+{
+    sycl_base_allocator(sycl::queue& queue) :
+        __queue{ queue }
+    {;}
+
+    void free(void* data)
+    {
+        assert(data);
+
+        if (data)
+        {
+            sycl::free(data, __queue);
+
+            stat_free();
+        }
+    }
+
+    ~sycl_base_allocator()
+    {
+        assert(__stat_allocs_count == __stat_fries_count);
+
+        std::cout << "Allocator stats: " << __stat_allocs_count << " / " << __stat_fries_count << std::endl;
+    }
+
+protected:
+    sycl::queue& __queue;
+
+    void stat_allocate()
+    {
+        __stat_allocs_count++;
+    }
+
+private:
+    size_t __stat_allocs_count{ 0 };
+    size_t __stat_fries_count{ 0 };
+
+private:
+    void stat_free()
+    {
+        __stat_fries_count++;
+    }
+};
+
+
+struct sycl_shared_allocator : public sycl_base_allocator
+{
+    sycl_shared_allocator(sycl::queue& queue) :
+        sycl_base_allocator(queue)
+    {;}
+
+    template<class T>
+    T* allocate(size_t size)
+    {
+        auto pointer = sycl::malloc_shared<T>(size, __queue);
+
+        if (pointer)
+        {
+            stat_allocate();
+        }
+
+        return pointer;
+    }
+};
+
+
+struct sycl_device_allocator : public sycl_base_allocator
+{
+    sycl_device_allocator(sycl::queue& queue) :
+        sycl_base_allocator(queue)
+    {;}
+
+    template<class T>
+    T* allocate(size_t size)
+    {
+        auto pointer = sycl::malloc_device<T>(size, __queue);
+
+        if (pointer)
+        {
+            stat_allocate();
+        }
+
+        return pointer;
+    }
+};
+
 template<class T>
-using host_matrix_view = memory_matrix_view<T, sycl_host_matrix_allocator<T>>;
+struct sycl_unique_ptr
+{
+    template<class TAlloc>
+    sycl_unique_ptr(size_t size, TAlloc& allocator) :
+        __allocator { allocator }, __ptr{ allocator. template allocate<T>(size) }
+    {;}
+
+    T* get()
+    {
+        return __ptr;
+    }
+
+    ~sycl_unique_ptr()
+    {
+        __allocator.free(__ptr);
+    }
+
+private:
+    sycl_base_allocator& __allocator;
+    T* __ptr;
+};
+
+
+template<class T>
+using host_matrix_view = memory_matrix_view<T, sycl_host_allocator<T>>;
+
+bool has_local_memory(const sycl::device &device)
+{
+    auto is_host = device.is_host();
+
+    if (!is_host)
+    {
+        return device.get_info<sycl::info::device::local_mem_type>() != sycl::info::local_mem_type::none;
+    }
+
+    return is_host;
+}
+
+void print_device_info(const sycl::device& device)
+{
+    std::cout << "Name:                  " << device.get_info<sycl::info::device::name>()            << std::endl;
+    std::cout << "Version:               " << device.get_info<sycl::info::device::version>()         << std::endl;
+    std::cout << "Vendor:                " << device.get_info<sycl::info::device::vendor>()          << std::endl;
+    std::cout << "Driver version:        " << device.get_info<sycl::info::device::driver_version>()  << std::endl;
+    std::cout << "                                                                                 " << std::endl;
+    std::cout << "Global memory size:    " << device.get_info<sycl::info::device::global_mem_size>() << std::endl;
+
+    bool has_local_mem = has_local_memory(device);
+
+    if (has_local_mem)
+    {
+        auto local_mem_size = device.get_info<sycl::info::device::local_mem_size>();
+
+        std::cout << "Local memory size:     " << local_mem_size << std::endl;
+    }
+    else
+    {
+        std::cout << "Device has no avaible local memory" << std::endl;
+    }
+
+    std::cout << std::endl;
+}
 
 int main(int argc, char* argv[])
 {
-    // cuda_selector d_selector;
+    // Выбор вычислительного устройства
+    sycl::gpu_selector d_selector;
     // sycl::cpu_selector d_selector;
 
-    sycl::gpu_selector d_selector;
+    // Вывод характеристик вычислительного устройства
+    print_device_info(d_selector.select_device());
 
-    auto dev = d_selector.select_device();
+    // Параметры записи результатов
+    constexpr size_t N_x = 16;
+    constexpr size_t N_y = 16;
+    constexpr size_t N_z = 16;
+    constexpr size_t N_l = 1; // = 12;
 
-    std::cout << "Name: " << dev.get_info<cl::sycl::info::device::name>() << std::endl;
-    std::cout << "Version: " << dev.get_info<cl::sycl::info::device::version>() << std::endl;
-    std::cout << "Vendor: " << dev.get_info<cl::sycl::info::device::vendor>() << std::endl;
-    std::cout << "Driver version: " << dev.get_info<cl::sycl::info::device::driver_version>() << std::endl;
+    // Параметры симуляции
+    constexpr size_t random_seed = 42;
+    constexpr size_t number_of_layers = 3; // 5
+
+    // Параметры вычисления
+    constexpr size_t N_repeats = 8'000 / 2; // 0.25 * 1000 / 10;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
+    constexpr size_t work_group_size = 256; // 32;
+    constexpr size_t num_groups = 128 * 2;
+    constexpr size_t total_threads_count = num_groups * work_group_size;
+    constexpr size_t total_photons_runs = N_repeats * work_group_size * num_groups;
 
     try 
     {
-        sycl::queue q(d_selector, exception_handler);
+        sycl::queue queue(d_selector, exception_handler);
 
-        sycl_host_matrix_allocator<float> allocator(q);
-
-        constexpr size_t N_x = 100;
-        constexpr size_t N_y = 100;
-        constexpr size_t N_z = 100;
-        constexpr size_t N_l = 12;
-
-        constexpr size_t N_repeats = 1 * 1000;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
-
-        constexpr size_t work_group_size = 64; // 32;
-        constexpr size_t num_groups = 128;
-
-
-        std::cout << "N_x dimensions of x: " << N_x << std::endl;
-        std::cout << "N_y dimensions of y: " << N_y << std::endl;
-        std::cout << "N_z dimensions of z: " << N_z << std::endl;
-        std::cout << "N_l count of layers: " << N_l << std::endl;
-        std::cout << "  Repeats per tread: " << N_repeats << std::endl;
-        std::cout << "    Work group size: " << work_group_size << std::endl;
-        std::cout << "   Number of groups: " << num_groups << std::endl;
-
+        sycl_host_allocator<float> allocator(queue);
+        sycl_shared_allocator shared_allocator(queue);
+        sycl_device_allocator device_allocator(queue);
 
         host_matrix_view<float> host_view(N_x, N_y, N_z, N_l, allocator);
 
         size_t N = host_view.properties().length();
 
-        float* device_data = sycl::malloc_device<float>(N, q);
-        float* device_group_data_pool = sycl::malloc_device<float>(N * num_groups, q);
+        sycl_unique_ptr<float> data(N, device_allocator);
+        sycl_unique_ptr<float> group_data_pool(N * num_groups, device_allocator);
+        sycl_unique_ptr<LayerStruct> layerspecs(number_of_layers, shared_allocator);
 
         InputStruct input;
 
-        input.layerspecs = sycl::malloc_shared<LayerStruct>(N_l, q);
+        input.configure(number_of_layers, layerspecs.get());
 
-        configure_input(input);
-        configure(input.layerspecs, q);
+        // Вывод параметров записи результатов
+        std::cout << "Image dimensions of x: " << N_x                 << std::endl;
+        std::cout << "Image dimensions of y: " << N_y                 << std::endl;
+        std::cout << "Image dimensions of z: " << N_z                 << std::endl;
+        std::cout << "Image count of layers: " << N_l                 << std::endl;
+        std::cout << "                                              " << std::endl;
 
-        q.parallel_for(num_groups,
+        // Вывод параметров симуляции
+        std::cout << "Random seed:           " << random_seed         << std::endl;
+        std::cout << "Inner layes:           " << number_of_layers    << std::endl;
+        std::cout << "                                              " << std::endl;
+
+        // Вывод параметров вычисления
+        std::cout << "Repeats per tread:     " << N_repeats           << std::endl;
+        std::cout << "Work group size:       " << work_group_size     << std::endl;
+        std::cout << "Number of groups:      " << num_groups          << std::endl;
+        std::cout << "                                              " << std::endl;
+        std::cout << "Total treads count:    " << total_threads_count << std::endl;
+        std::cout << "Total photon runs:     " << total_photons_runs  << std::endl;
+        std::cout << "Total memory used:     " << (N * num_groups + N) * sizeof(float) << " bytes" << std::endl;
+        std::cout << "                                              " << std::endl;
+
+        float* device_data = data.get();
+        float* device_group_data_pool = group_data_pool.get();
+
+        // Инициализация матрицы значений
+        queue.parallel_for(num_groups,
             [=](auto group_index)
             {
                 float* data = device_group_data_pool + N * group_index;
@@ -135,29 +291,34 @@ int main(int argc, char* argv[])
                 }
             });
 
-        q.submit(
-            [&](sycl::handler& h) 
-            {
-                sycl::stream output(1024, 256, h);
+        auto time_start = std::chrono::high_resolution_clock::now();
 
-                h.parallel_for_work_group<class PhotonKernel>(sycl::range<1>(num_groups), sycl::range<1>(work_group_size),
-                    [=](sycl::group<1> g) 
+        // Вычисление задачи на устройстве
+        queue.submit(
+            [&](sycl::handler& handler)
+            {
+                sycl::stream output(1024, 256, handler);
+
+                handler.parallel_for_work_group<class PhotonKernel>(sycl::range<1>(num_groups), sycl::range<1>(work_group_size),
+                    [=](sycl::group<1> group) 
                     {
-                        size_t gid = g.get_group_id(0); // work group index
+                        size_t gid = group.get_group_id(0); // work group index
 
                         // select from allocated memory on device
                         float* data = device_group_data_pool + N * gid;
 
-                        g.parallel_for_work_item(
+                        // float local_mem[N_x * N_y * N_z * N_l]{ 0.0 };
+
+                        group.parallel_for_work_item(
                             [&](sycl::h_item<1> item)
                             {
-                                raw_memory_matrix_view<float> view(data, N_x, N_y, N_z, N_l);
-
                                 uint64_t thread_global_id = item.get_global_id();
+                                mcg59_t random_generator(random_seed, thread_global_id, work_group_size * num_groups);
 
-                                mcg59_t random_generator(42, thread_global_id, work_group_size * num_groups);
+                                raw_memory_matrix_view<float> view(data, N_x, N_y, N_z, N_l);
+                                // raw_memory_matrix_view<float> view(local_mem, N_x, N_y, N_z, N_l);
 
-                                PhotonStruct photon(random_generator, view, input, input.layerspecs);
+                                PhotonStruct photon(random_generator, view, input);
 
                                 auto rsp = Rspecular(input.layerspecs);
 
@@ -175,9 +336,14 @@ int main(int argc, char* argv[])
                     });
             });
 
-        q.wait();
+        queue.wait();
 
-        q.parallel_for(N,
+        auto time_end = std::chrono::high_resolution_clock::now();
+        auto time_duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start);
+
+        std::cout << "Elapsed time: " << time_duration.count() << " ms" << std::endl;
+
+        queue.parallel_for(N,
             [=](auto idx)
             {
                 int summ = 0;
@@ -192,11 +358,11 @@ int main(int argc, char* argv[])
                 device_data[idx] = summ;
             });
 
-        q.wait();
+        queue.wait();
 
-        q.memcpy(host_view.data(), device_data, host_view.size_of_data());
+        queue.memcpy(host_view.data(), device_data, host_view.size_of_data());
 
-        q.wait();
+        queue.wait();
 
         // 
         matrix_utils::normalize_v2(host_view);
@@ -231,10 +397,6 @@ int main(int argc, char* argv[])
 
             fmanager.export_file(host_view, file);
         }
-
-        sycl::free(input.layerspecs, q);
-        sycl::free(device_data, q);
-        sycl::free(device_group_data_pool, q);
     }
     catch (const sycl::exception& e)
     {

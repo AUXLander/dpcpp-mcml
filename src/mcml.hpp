@@ -149,6 +149,184 @@ struct InputStruct
 
 	InputStruct(const InputStruct&) = default;
 
+	void configure(short number_of_layers, LayerStruct* layerspecs_ptr = nullptr)
+	{
+		InputStruct& input = *this;
+
+		input.num_photons = 102400;
+		input.Wth = 0.0001;
+		input.dz = 0.01;
+		input.dr = 0.02;
+		input.da = 0.015707;
+		input.nz = 200;
+		input.nr = 500;
+		input.na = 100;
+		input.num_layers = number_of_layers;
+
+		if (input.num_layers && layerspecs_ptr)
+		{
+			input.layerspecs = layerspecs_ptr;
+
+			configure_layers();
+		}
+	}
+
+	void configure_layers()
+	{
+		if (num_layers > 0)
+		{
+			layerspecs[0].z0 = std::numeric_limits<double>::min();
+			layerspecs[0].z1 = std::numeric_limits<double>::min();
+			layerspecs[0].n = 1.0;
+			layerspecs[0].mua = std::numeric_limits<double>::min();
+			layerspecs[0].mus = std::numeric_limits<double>::min();
+			layerspecs[0].anisotropy = std::numeric_limits<double>::min();
+			layerspecs[0].cos_crit0 = std::numeric_limits<double>::min();
+			layerspecs[0].cos_crit1 = std::numeric_limits<double>::min();
+		}
+
+		if (num_layers > 1)
+		{
+			layerspecs[1].z0 = 0;
+			layerspecs[1].z1 = 0.01;
+			layerspecs[1].n = 1.5;
+			layerspecs[1].mua = 3.3;
+			layerspecs[1].mus = 107;
+			layerspecs[1].anisotropy = 0.79;
+			layerspecs[1].cos_crit0 = 0.745355;
+			layerspecs[1].cos_crit1 = 0.35901;
+		}
+
+		if (num_layers > 2)
+		{
+			layerspecs[2].z0 = 0.01;
+			layerspecs[2].z1 = 0.03;
+			layerspecs[2].n = 1.4;
+			layerspecs[2].mua = 2.7;
+			layerspecs[2].mus = 187.0;
+			layerspecs[2].anisotropy = 0.82;
+			layerspecs[2].cos_crit0 = 0.0;
+			layerspecs[2].cos_crit1 = 0.0;
+		}
+
+		if (num_layers > 3)
+		{
+			//layerspecs[3].z0 = 0.03;
+			//layerspecs[3].z1 = 0.05;
+			//layerspecs[3].n = 1.4;
+			//layerspecs[3].mua = 3.3;
+			//layerspecs[3].mus = 192.0;
+			//layerspecs[3].anisotropy = 0.82;
+			//layerspecs[3].cos_crit0 = 0.0;
+			//layerspecs[3].cos_crit1 = 0.0;
+
+			layerspecs[3].z0 = 0.01;
+			layerspecs[3].z1 = 0.03;
+			layerspecs[3].n = 1.4;
+			layerspecs[3].mua = 2.7;
+			layerspecs[3].mus = 187.0;
+			layerspecs[3].anisotropy = 0.82;
+			layerspecs[3].cos_crit0 = 0.0;
+			layerspecs[3].cos_crit1 = 0.0;
+		}
+
+		if (num_layers > 4)
+		{
+			layerspecs[4].z0 = 0.05;
+			layerspecs[4].z1 = 0.14;
+			layerspecs[4].n = 1.4;
+			layerspecs[4].mua = 2.7;
+			layerspecs[4].mus = 187.0;
+			layerspecs[4].anisotropy = 0.82;
+			layerspecs[4].cos_crit0 = 0.0;
+			layerspecs[4].cos_crit1 = 0.0;
+		}
+
+		if (num_layers > 5)
+		{
+			layerspecs[5].z0 = 0.14;
+			layerspecs[5].z1 = 0.2;
+			layerspecs[5].n = 1.4;
+			layerspecs[5].mua = 2.4;
+			layerspecs[5].mus = 194;
+			layerspecs[5].anisotropy = 0.82;
+			layerspecs[5].cos_crit0 = 0.0;
+			layerspecs[5].cos_crit1 = 0.6998542;
+		}
+
+		if (num_layers > 6)
+		{
+			layerspecs[6].z0 = 0.14;
+			layerspecs[6].z1 = 0.2;
+			layerspecs[6].n = 1.4;
+			layerspecs[6].mua = 2.4;
+			layerspecs[6].mus = 194;
+			layerspecs[6].anisotropy = 0.82;
+			layerspecs[6].cos_crit0 = 0.0;
+			layerspecs[6].cos_crit1 = 0.6998542;
+		}
+
+		if (num_layers > 7)
+		{
+			layerspecs[7].z0 = 0.14;
+			layerspecs[7].z1 = 0.2;
+			layerspecs[7].n = 1.4;
+			layerspecs[7].mua = 2.4;
+			layerspecs[7].mus = 194;
+			layerspecs[7].anisotropy = 0.82;
+			layerspecs[7].cos_crit0 = 0.0;
+			layerspecs[7].cos_crit1 = 0.6998542;
+		}
+
+		if (num_layers > 8)
+		{
+			layerspecs[8].z0 = 0.14;
+			layerspecs[8].z1 = 0.2;
+			layerspecs[8].n = 1.4;
+			layerspecs[8].mua = 2.4;
+			layerspecs[8].mus = 194;
+			layerspecs[8].anisotropy = 0.82;
+			layerspecs[8].cos_crit0 = 0.0;
+			layerspecs[8].cos_crit1 = 0.6998542;
+		}
+
+		if (num_layers > 9)
+		{
+			layerspecs[9].z0 = 0.14;
+			layerspecs[9].z1 = 0.2;
+			layerspecs[9].n = 1.4;
+			layerspecs[9].mua = 2.4;
+			layerspecs[9].mus = 194;
+			layerspecs[9].anisotropy = 0.82;
+			layerspecs[9].cos_crit0 = 0.0;
+			layerspecs[9].cos_crit1 = 0.6998542;
+		}
+
+		if (num_layers > 10)
+		{
+			layerspecs[10].z0 = 0.14;
+			layerspecs[10].z1 = 0.2;
+			layerspecs[10].n = 1.4;
+			layerspecs[10].mua = 2.4;
+			layerspecs[10].mus = 194;
+			layerspecs[10].anisotropy = 0.82;
+			layerspecs[10].cos_crit0 = 0.0;
+			layerspecs[10].cos_crit1 = 0.6998542;
+		}
+
+		if (num_layers > 11)
+		{
+			layerspecs[11].z0 = std::numeric_limits<double>::min();
+			layerspecs[11].z1 = std::numeric_limits<double>::min();
+			layerspecs[11].n = 1.0;
+			layerspecs[11].mua = std::numeric_limits<double>::min();
+			layerspecs[11].mus = std::numeric_limits<double>::min();
+			layerspecs[11].anisotropy = std::numeric_limits<double>::min();
+			layerspecs[11].cos_crit0 = std::numeric_limits<double>::min();
+			layerspecs[11].cos_crit1 = std::numeric_limits<double>::min();
+		}
+	}
+
 	void free()
 	{
 		if (layerspecs)
@@ -209,25 +387,32 @@ struct PhotonStruct
 	template<class T>
 	class weight_tracker
 	{
-		double __weight;
-
+		double                 __weight;
+		PhotonStruct&          __ps;
 		matrix_view_adaptor<T> __view;
-
-		PhotonStruct& __ps;
 
 		inline void __track(float value)
 		{
+			// __view.at(__ps.x, __ps.y, __ps.z, 0) += value;
+
 			// atomic_array_ref atomic(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer));
-			atomic_array_ref atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
+
+			sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
+				atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
+
+			//sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::local_space>
+			//	atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
+
+
+			//atomic_array_ref atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
 
 			atomic.fetch_add(value);
 		}
 
 	public:
 
-		weight_tracker(PhotonStruct& ps, double weight, matrix_view_adaptor<T>& view) :
-			__ps{ ps },
-			__weight{ weight }, __view{ view }
+		weight_tracker(double weight, PhotonStruct& ps, matrix_view_adaptor<T>& view) :
+			__weight{ weight }, __ps{ ps }, __view{ view }
 		{;}
 
 		weight_tracker<T>& operator=(const double& value)
@@ -286,12 +471,6 @@ struct PhotonStruct
 		{
 			return __weight < value;
 		}
-
-		inline void track()
-		{
-			//atomic_array_ref atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
-			//atomic.fetch_add(0.15);
-		}
 	};
 
 	double x{ 0 }, y{ 0 }, z{ 0 };    // vector of position
@@ -312,10 +491,8 @@ struct PhotonStruct
 
 	const LayerStruct* layerspecs;
 
-	PhotonStruct(mcg59_t& random, matrix_view_adaptor<float> view, const InputStruct& input, const LayerStruct* l) :
-		w{ *this, 0, view },
-		random{ random },
-		input{ input }, layerspecs{ l }
+	PhotonStruct(mcg59_t& random, matrix_view_adaptor<float> view, const InputStruct& input) :
+		w{ 0.0, *this, view }, random{ random }, input{ input }, layerspecs{ input.layerspecs }
 	{;}
 
 	~PhotonStruct() = default;
@@ -341,8 +518,6 @@ struct PhotonStruct
 			layer = 2; // LAYER CHANGE
 			z = layerspecs[2].z0;
 		}
-
-		w.track();
 	}
 
 	void spin(const double anisotropy)
@@ -396,8 +571,6 @@ struct PhotonStruct
 		z += step_size * uz;
 
 		w += MIN_WEIGHT;
-
-		w.track();
 	}
 
 	void step_size_in_glass()
@@ -453,8 +626,6 @@ struct PhotonStruct
 		if (w != 0.0 && get_random() < CHANCE)
 		{
 			w /= CHANCE;
-
-			w.track();
 		}
 		else
 		{
@@ -473,8 +644,6 @@ struct PhotonStruct
 		ia = std::min<size_t>(ia, input.na - 1);
 
 		w *= reflectance;
-
-		w.track();
 	}
 
 	void record_t(double reflectance)
@@ -488,8 +657,6 @@ struct PhotonStruct
 		ia = std::min<size_t>(ia, input.na - 1);
 
 		w *= reflectance;
-
-		w.track();
 	}
 
 	void drop()
@@ -512,8 +679,6 @@ struct PhotonStruct
 		dwa = w * mua / (mua + mus);
 
 		w -= dwa;
-
-		w.track();
 	}
 
 	void cross_up_or_not()
@@ -547,8 +712,6 @@ struct PhotonStruct
 				ux *= ni / nt;
 				uy *= ni / nt;
 				uz = -uz1;
-
-				w.track();
 			}
 		}
 		else
@@ -588,8 +751,6 @@ struct PhotonStruct
 				ux *= ni / nt;
 				uy *= ni / nt;
 				uz = uz1;
-
-				w.track();
 			}
 		}
 		else
@@ -730,142 +891,4 @@ double Rspecular(LayerStruct* Layerspecs_Ptr)
 	}
 
 	return r1;
-}
-
-void configure_input(InputStruct& input)
-{
-	input.num_photons = 102400;
-	input.Wth = 0.0001;
-	input.dz = 0.01;
-	input.dr = 0.02;
-	input.da = 0.015707;
-	input.nz = 200;
-	input.nr = 500;
-	input.na = 100;
-	input.num_layers = 5;
-}
-
-void configure(LayerStruct *layerspecs, sycl::queue q)
-{
-	layerspecs[0].z0 = std::numeric_limits<double>::min();
-	layerspecs[0].z1 = std::numeric_limits<double>::min();
-	layerspecs[0].n = 1.0;
-	layerspecs[0].mua = std::numeric_limits<double>::min();
-	layerspecs[0].mus = std::numeric_limits<double>::min();
-	layerspecs[0].anisotropy = std::numeric_limits<double>::min();
-	layerspecs[0].cos_crit0 = std::numeric_limits<double>::min();
-	layerspecs[0].cos_crit1 = std::numeric_limits<double>::min();
-
-	layerspecs[1].z0 = 0;
-	layerspecs[1].z1 = 0.01;
-	layerspecs[1].n = 1.5;
-	layerspecs[1].mua = 3.3;
-	layerspecs[1].mus = 107;
-	layerspecs[1].anisotropy = 0.79;
-	layerspecs[1].cos_crit0 = 0.745355;
-	layerspecs[1].cos_crit1 = 0.35901;
-
-	layerspecs[2].z0 = 0.01;
-	layerspecs[2].z1 = 0.03;
-	layerspecs[2].n = 1.4;
-	layerspecs[2].mua = 2.7;
-	layerspecs[2].mus = 187.0;
-	layerspecs[2].anisotropy = 0.82;
-	layerspecs[2].cos_crit0 = 0.0;
-	layerspecs[2].cos_crit1 = 0.0;
-
-	//layerspecs[3].z0 = 0.03;
-	//layerspecs[3].z1 = 0.05;
-	//layerspecs[3].n = 1.4;
-	//layerspecs[3].mua = 3.3;
-	//layerspecs[3].mus = 192.0;
-	//layerspecs[3].anisotropy = 0.82;
-	//layerspecs[3].cos_crit0 = 0.0;
-	//layerspecs[3].cos_crit1 = 0.0;
-
-	layerspecs[3].z0 = 0.01;
-	layerspecs[3].z1 = 0.03;
-	layerspecs[3].n = 1.4;
-	layerspecs[3].mua = 2.7;
-	layerspecs[3].mus = 187.0;
-	layerspecs[3].anisotropy = 0.82;
-	layerspecs[3].cos_crit0 = 0.0;
-	layerspecs[3].cos_crit1 = 0.0;
-
-	layerspecs[4].z0 = 0.05;
-	layerspecs[4].z1 = 0.14;
-	layerspecs[4].n = 1.4;
-	layerspecs[4].mua = 2.7;
-	layerspecs[4].mus = 187.0;
-	layerspecs[4].anisotropy = 0.82;
-	layerspecs[4].cos_crit0 = 0.0;
-	layerspecs[4].cos_crit1 = 0.0;
-
-	layerspecs[5].z0 = 0.14;
-	layerspecs[5].z1 = 0.2;
-	layerspecs[5].n = 1.4;
-	layerspecs[5].mua = 2.4;
-	layerspecs[5].mus = 194;
-	layerspecs[5].anisotropy = 0.82;
-	layerspecs[5].cos_crit0 = 0.0;
-	layerspecs[5].cos_crit1 = 0.6998542;
-
-
-	layerspecs[6].z0 = 0.14;
-	layerspecs[6].z1 = 0.2;
-	layerspecs[6].n = 1.4;
-	layerspecs[6].mua = 2.4;
-	layerspecs[6].mus = 194;
-	layerspecs[6].anisotropy = 0.82;
-	layerspecs[6].cos_crit0 = 0.0;
-	layerspecs[6].cos_crit1 = 0.6998542;
-
-
-
-	layerspecs[7].z0 = 0.14;
-	layerspecs[7].z1 = 0.2;
-	layerspecs[7].n = 1.4;
-	layerspecs[7].mua = 2.4;
-	layerspecs[7].mus = 194;
-	layerspecs[7].anisotropy = 0.82;
-	layerspecs[7].cos_crit0 = 0.0;
-	layerspecs[7].cos_crit1 = 0.6998542;
-
-
-	layerspecs[8].z0 = 0.14;
-	layerspecs[8].z1 = 0.2;
-	layerspecs[8].n = 1.4;
-	layerspecs[8].mua = 2.4;
-	layerspecs[8].mus = 194;
-	layerspecs[8].anisotropy = 0.82;
-	layerspecs[8].cos_crit0 = 0.0;
-	layerspecs[8].cos_crit1 = 0.6998542;
-
-
-	layerspecs[9].z0 = 0.14;
-	layerspecs[9].z1 = 0.2;
-	layerspecs[9].n = 1.4;
-	layerspecs[9].mua = 2.4;
-	layerspecs[9].mus = 194;
-	layerspecs[9].anisotropy = 0.82;
-	layerspecs[9].cos_crit0 = 0.0;
-	layerspecs[9].cos_crit1 = 0.6998542;
-
-	layerspecs[10].z0 = 0.14;
-	layerspecs[10].z1 = 0.2;
-	layerspecs[10].n = 1.4;
-	layerspecs[10].mua = 2.4;
-	layerspecs[10].mus = 194;
-	layerspecs[10].anisotropy = 0.82;
-	layerspecs[10].cos_crit0 = 0.0;
-	layerspecs[10].cos_crit1 = 0.6998542;
-
-	layerspecs[11].z0 = std::numeric_limits<double>::min();
-	layerspecs[11].z1 = std::numeric_limits<double>::min();
-	layerspecs[11].n = 1.0;
-	layerspecs[11].mua = std::numeric_limits<double>::min();
-	layerspecs[11].mus = std::numeric_limits<double>::min();
-	layerspecs[11].anisotropy = std::numeric_limits<double>::min();
-	layerspecs[11].cos_crit0 = std::numeric_limits<double>::min();
-	layerspecs[11].cos_crit1 = std::numeric_limits<double>::min();
 }
