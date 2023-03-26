@@ -6,6 +6,8 @@
 #include "matrix.hpp"
 #include "iofile.hpp"
 
+//#define USE_LOCAL_MEMORY
+
 using atomic_array_ref = sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>;
 
 // #define PARTIALREFLECTION 0
@@ -221,7 +223,7 @@ struct InputStruct
 			//layerspecs[3].anisotropy = 0.82;
 			//layerspecs[3].cos_crit0 = 0.0;
 			//layerspecs[3].cos_crit1 = 0.0;
-
+			 
 			layerspecs[3].z0 = 0.01;
 			layerspecs[3].z1 = 0.03;
 			layerspecs[3].n = 1.4;
@@ -244,89 +246,103 @@ struct InputStruct
 			layerspecs[4].cos_crit1 = 0.0;
 		}
 
-		if (num_layers > 5)
+		for (int i = 5; i < num_layers; ++i)
 		{
-			layerspecs[5].z0 = 0.14;
-			layerspecs[5].z1 = 0.2;
-			layerspecs[5].n = 1.4;
-			layerspecs[5].mua = 2.4;
-			layerspecs[5].mus = 194;
-			layerspecs[5].anisotropy = 0.82;
-			layerspecs[5].cos_crit0 = 0.0;
-			layerspecs[5].cos_crit1 = 0.6998542;
+			layerspecs[i].z0 = 0.14;
+			layerspecs[i].z1 = 0.2;
+			layerspecs[i].n = 1.4;
+			layerspecs[i].mua = 2.4;
+			layerspecs[i].mus = 194;
+			layerspecs[i].anisotropy = 0.82;
+			layerspecs[i].cos_crit0 = 0.0;
+			layerspecs[i].cos_crit1 = 0.6998542;
 		}
 
-		if (num_layers > 6)
-		{
-			layerspecs[6].z0 = 0.14;
-			layerspecs[6].z1 = 0.2;
-			layerspecs[6].n = 1.4;
-			layerspecs[6].mua = 2.4;
-			layerspecs[6].mus = 194;
-			layerspecs[6].anisotropy = 0.82;
-			layerspecs[6].cos_crit0 = 0.0;
-			layerspecs[6].cos_crit1 = 0.6998542;
-		}
+		layerspecs[num_layers - 1].z0 = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].z1 = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].n = 1.0;
+		layerspecs[num_layers - 1].mua = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].mus = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].anisotropy = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].cos_crit0 = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].cos_crit1 = std::numeric_limits<double>::min();
 
-		if (num_layers > 7)
-		{
-			layerspecs[7].z0 = 0.14;
-			layerspecs[7].z1 = 0.2;
-			layerspecs[7].n = 1.4;
-			layerspecs[7].mua = 2.4;
-			layerspecs[7].mus = 194;
-			layerspecs[7].anisotropy = 0.82;
-			layerspecs[7].cos_crit0 = 0.0;
-			layerspecs[7].cos_crit1 = 0.6998542;
-		}
+		//if (num_layers > 5)
+		//{
 
-		if (num_layers > 8)
-		{
-			layerspecs[8].z0 = 0.14;
-			layerspecs[8].z1 = 0.2;
-			layerspecs[8].n = 1.4;
-			layerspecs[8].mua = 2.4;
-			layerspecs[8].mus = 194;
-			layerspecs[8].anisotropy = 0.82;
-			layerspecs[8].cos_crit0 = 0.0;
-			layerspecs[8].cos_crit1 = 0.6998542;
-		}
+		//}
 
-		if (num_layers > 9)
-		{
-			layerspecs[9].z0 = 0.14;
-			layerspecs[9].z1 = 0.2;
-			layerspecs[9].n = 1.4;
-			layerspecs[9].mua = 2.4;
-			layerspecs[9].mus = 194;
-			layerspecs[9].anisotropy = 0.82;
-			layerspecs[9].cos_crit0 = 0.0;
-			layerspecs[9].cos_crit1 = 0.6998542;
-		}
+		//if (num_layers > 6)
+		//{
+		//	layerspecs[6].z0 = 0.14;
+		//	layerspecs[6].z1 = 0.2;
+		//	layerspecs[6].n = 1.4;
+		//	layerspecs[6].mua = 2.4;
+		//	layerspecs[6].mus = 194;
+		//	layerspecs[6].anisotropy = 0.82;
+		//	layerspecs[6].cos_crit0 = 0.0;
+		//	layerspecs[6].cos_crit1 = 0.6998542;
+		//}
 
-		if (num_layers > 10)
-		{
-			layerspecs[10].z0 = 0.14;
-			layerspecs[10].z1 = 0.2;
-			layerspecs[10].n = 1.4;
-			layerspecs[10].mua = 2.4;
-			layerspecs[10].mus = 194;
-			layerspecs[10].anisotropy = 0.82;
-			layerspecs[10].cos_crit0 = 0.0;
-			layerspecs[10].cos_crit1 = 0.6998542;
-		}
+		//if (num_layers > 7)
+		//{
+		//	layerspecs[7].z0 = 0.14;
+		//	layerspecs[7].z1 = 0.2;
+		//	layerspecs[7].n = 1.4;
+		//	layerspecs[7].mua = 2.4;
+		//	layerspecs[7].mus = 194;
+		//	layerspecs[7].anisotropy = 0.82;
+		//	layerspecs[7].cos_crit0 = 0.0;
+		//	layerspecs[7].cos_crit1 = 0.6998542;
+		//}
 
-		if (num_layers > 11)
-		{
-			layerspecs[11].z0 = std::numeric_limits<double>::min();
-			layerspecs[11].z1 = std::numeric_limits<double>::min();
-			layerspecs[11].n = 1.0;
-			layerspecs[11].mua = std::numeric_limits<double>::min();
-			layerspecs[11].mus = std::numeric_limits<double>::min();
-			layerspecs[11].anisotropy = std::numeric_limits<double>::min();
-			layerspecs[11].cos_crit0 = std::numeric_limits<double>::min();
-			layerspecs[11].cos_crit1 = std::numeric_limits<double>::min();
-		}
+		//if (num_layers > 8)
+		//{
+		//	layerspecs[8].z0 = 0.14;
+		//	layerspecs[8].z1 = 0.2;
+		//	layerspecs[8].n = 1.4;
+		//	layerspecs[8].mua = 2.4;
+		//	layerspecs[8].mus = 194;
+		//	layerspecs[8].anisotropy = 0.82;
+		//	layerspecs[8].cos_crit0 = 0.0;
+		//	layerspecs[8].cos_crit1 = 0.6998542;
+		//}
+
+		//if (num_layers > 9)
+		//{
+		//	layerspecs[9].z0 = 0.14;
+		//	layerspecs[9].z1 = 0.2;
+		//	layerspecs[9].n = 1.4;
+		//	layerspecs[9].mua = 2.4;
+		//	layerspecs[9].mus = 194;
+		//	layerspecs[9].anisotropy = 0.82;
+		//	layerspecs[9].cos_crit0 = 0.0;
+		//	layerspecs[9].cos_crit1 = 0.6998542;
+		//}
+
+		//if (num_layers > 10)
+		//{
+		//	layerspecs[10].z0 = 0.14;
+		//	layerspecs[10].z1 = 0.2;
+		//	layerspecs[10].n = 1.4;
+		//	layerspecs[10].mua = 2.4;
+		//	layerspecs[10].mus = 194;
+		//	layerspecs[10].anisotropy = 0.82;
+		//	layerspecs[10].cos_crit0 = 0.0;
+		//	layerspecs[10].cos_crit1 = 0.6998542;
+		//}
+
+		//if (num_layers > 11)
+		//{
+		//	layerspecs[11].z0 = std::numeric_limits<double>::min();
+		//	layerspecs[11].z1 = std::numeric_limits<double>::min();
+		//	layerspecs[11].n = 1.0;
+		//	layerspecs[11].mua = std::numeric_limits<double>::min();
+		//	layerspecs[11].mus = std::numeric_limits<double>::min();
+		//	layerspecs[11].anisotropy = std::numeric_limits<double>::min();
+		//	layerspecs[11].cos_crit0 = std::numeric_limits<double>::min();
+		//	layerspecs[11].cos_crit1 = std::numeric_limits<double>::min();
+		//}
 	}
 
 	void free()
@@ -395,23 +411,16 @@ struct PhotonStruct
 
 		inline void __track(float value)
 		{
-			// __view.at(__ps.x, __ps.y, __ps.z, 0) += value;
-
-			// atomic_array_ref atomic(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer));
+#ifdef USE_LOCAL_MEMORY
+			sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::local_space>
+				atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
+#else
+			sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
+				atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
+#endif
 
 			//sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
 			//	atomic(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer % __ps.input.num_output_layers));
-
-			sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
-				atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
-
-			//__ps.input.num_output_layers
-
-			//sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::local_space>
-			//	atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
-
-
-			//atomic_array_ref atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
 
 			atomic.fetch_add(value);
 		}

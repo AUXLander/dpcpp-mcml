@@ -218,17 +218,17 @@ int main(int argc, char* argv[])
     print_device_info(d_selector.select_device());
 
     // ѕараметры записи результатов
-    constexpr size_t N_x = 16;
-    constexpr size_t N_y = 16;
-    constexpr size_t N_z = 16;
+    constexpr size_t N_x = 64;
+    constexpr size_t N_y = 64;
+    constexpr size_t N_z = 64;
     constexpr size_t N_l = 1; // = 12;
 
     // ѕараметры симул€ции
     constexpr size_t random_seed = 42;
-    constexpr size_t number_of_layers = 3; // 5
+    constexpr size_t number_of_layers = 24;
 
     // ѕараметры вычислени€
-    constexpr size_t N_repeats = 8'000 / 2; // 0.25 * 1000 / 10;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
+    constexpr size_t N_repeats = 10; //  8'000 / 2; // 0.25 * 1000 / 10;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
     constexpr size_t work_group_size = 256; // 32;
     constexpr size_t num_groups = 128 * 2;
     constexpr size_t total_threads_count = num_groups * work_group_size;
@@ -303,11 +303,11 @@ int main(int argc, char* argv[])
                     [=](sycl::group<1> group) 
                     {
                         size_t gid = group.get_group_id(0); // work group index
-
-                        // select from allocated memory on device
                         float* data = device_group_data_pool + N * gid;
 
-                        // float local_mem[N_x * N_y * N_z * N_l]{ 0.0 };
+#ifdef USE_LOCAL_MEMORY
+                        float local_mem[N_x * N_y * N_z * N_l]{ 0.0 };
+#endif // USE_LOCAL_MEMORY
 
                         group.parallel_for_work_item(
                             [&](sycl::h_item<1> item)
@@ -315,8 +315,11 @@ int main(int argc, char* argv[])
                                 uint64_t thread_global_id = item.get_global_id();
                                 mcg59_t random_generator(random_seed, thread_global_id, work_group_size * num_groups);
 
+#ifdef USE_LOCAL_MEMORY
+                                raw_memory_matrix_view<float> view(local_mem, N_x, N_y, N_z, N_l);
+#else
                                 raw_memory_matrix_view<float> view(data, N_x, N_y, N_z, N_l);
-                                // raw_memory_matrix_view<float> view(local_mem, N_x, N_y, N_z, N_l);
+#endif // USE_LOCAL_MEMORY
 
                                 PhotonStruct photon(random_generator, view, input);
 
@@ -333,6 +336,12 @@ int main(int argc, char* argv[])
                                     while (!photon.dead);
                                 }
                             });
+#ifdef USE_LOCAL_MEMORY
+                        for (int i = 0; i < N_x * N_y * N_z * N_l; ++i)
+                        {
+                            data[i] = local_mem[i];
+                        }
+#endif // USE_LOCAL_MEMORY
                     });
             });
 

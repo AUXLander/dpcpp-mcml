@@ -312,14 +312,13 @@ class matrix_view_adaptor
 	}
 
 public:
-	constexpr static double x_min = -0.65; // -0.35;
-	constexpr static double x_max = +0.65; // +0.35;
-
-	constexpr static double y_min = -0.65; // -0.25;
-	constexpr static double y_max = +0.65; // +0.12;
-
-	constexpr static double z_min = -0.50; // -0.350;
-	constexpr static double z_max = +0.50; // +0.350;
+	                                     // 16x16x16x1  // 64x64x64x1    
+	constexpr static double x_min = -1;  // -0.65;        // -1
+	constexpr static double x_max = +1;  // +0.65;        // +1
+	constexpr static double y_min = -1;  // -0.65;        // -1
+	constexpr static double y_max = +1;  // +0.65;        // +1
+	constexpr static double z_min = -0.1;  // -0.50;        // -1
+	constexpr static double z_max = +1.4;  // +0.50;        // +1
 
 public:
 	matrix_view_adaptor(raw_memory_matrix_view<T>& view) :
@@ -333,13 +332,17 @@ public:
 	{
 		auto [size_x, size_y, size_z, size_l] = __view.properties().size();
 
-		double x_step = (x_max - x_min) / static_cast<double>(size_x);
-		double y_step = (y_max - y_min) / static_cast<double>(size_y);
-		double z_step = (z_max - z_min) / static_cast<double>(size_z);
+		constexpr double x_length = (x_max - x_min);
+		constexpr double y_length = (y_max - y_min);
+		constexpr double z_length = (z_max - z_min);
 
-		size_t __x = static_cast<size_t>((x - x_min) / x_step);
-		size_t __y = static_cast<size_t>((y - y_min) / y_step);
-		size_t __z = static_cast<size_t>((z - z_min) / z_step);
+		double x_step = x_length / static_cast<double>(size_x);
+		double y_step = y_length / static_cast<double>(size_y);
+		double z_step = z_length / static_cast<double>(size_z);
+
+		size_t __x = static_cast<size_t>(clamp(x - x_min, 0.0, x_length) / x_step);
+		size_t __y = static_cast<size_t>(clamp(y - y_min, 0.0, y_length) / y_step);
+		size_t __z = static_cast<size_t>(clamp(z - z_min, 0.0, z_length) / z_step);
 
 		return __view.at(__x, __y, __z, l);
 	}
