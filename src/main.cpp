@@ -218,9 +218,9 @@ int main(int argc, char* argv[])
     print_device_info(d_selector.select_device());
 
     // ѕараметры записи результатов
-    constexpr size_t N_x = 64; //64;
-    constexpr size_t N_y = 64; //64;
-    constexpr size_t N_z = 64; //64;
+    constexpr size_t N_x = 24; //64;
+    constexpr size_t N_y = 24; //64;
+    constexpr size_t N_z = 24; //64;
     constexpr size_t N_l = 1; // = 12;
 
     // ѕараметры симул€ции
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
     constexpr size_t number_of_layers = 24;
 
     // ѕараметры вычислени€
-    constexpr size_t N_repeats = 1; //  8'000 / 2; // 0.25 * 1000 / 10;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
+    constexpr size_t N_repeats = 100; //  8'000 / 2; // 0.25 * 1000 / 10;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
     constexpr size_t work_group_size = 256; // 32;
     constexpr size_t num_groups = 128 * 2;
     constexpr size_t total_threads_count = num_groups * work_group_size;
@@ -303,10 +303,13 @@ int main(int argc, char* argv[])
                     [=](sycl::group<1> group) 
                     {
                         size_t gid = group.get_group_id(0); // work group index
-                        float* data = device_group_data_pool + N * gid;
 
-#ifdef USE_LOCAL_MEMORY
-                        float local_mem[N_x * N_y * N_z * N_l]{ 0.0 };
+                        float* group_data_pool = device_group_data_pool + N * gid;
+
+#if defined(USE_LOCAL_MEMORY)
+                        float memory[N_x * N_y * N_z * N_l]{ 0.0 };
+#else
+                        float* memory = group_data_pool;
 #endif // USE_LOCAL_MEMORY
 
                         group.parallel_for_work_item(
@@ -315,11 +318,7 @@ int main(int argc, char* argv[])
                                 uint64_t thread_global_id = item.get_global_id();
                                 mcg59_t random_generator(random_seed, thread_global_id, work_group_size * num_groups);
 
-#ifdef USE_LOCAL_MEMORY
-                                raw_memory_matrix_view<float> view(local_mem, N_x, N_y, N_z, N_l);
-#else
-                                raw_memory_matrix_view<float> view(data, N_x, N_y, N_z, N_l);
-#endif // USE_LOCAL_MEMORY
+                                raw_memory_matrix_view<float> view(memory, N_x, N_y, N_z, N_l);
 
                                 PhotonStruct photon(random_generator, view, input);
 
@@ -336,10 +335,12 @@ int main(int argc, char* argv[])
                                     while (!photon.dead);
                                 }
                             });
-#ifdef USE_LOCAL_MEMORY
+
+#if defined(USE_LOCAL_MEMORY) || defined(USE_ATOMIC_SUMMATOR)
                         group.parallel_for_work_item(
                             [&](sycl::h_item<1> item)
                             {
+                                static_assert(N_x * N_y * N_z * N_l % work_group_size == 0);
                                 constexpr auto batch_size = N_x * N_y * N_z * N_l / work_group_size;
 
                                 auto thread_local_id = item.get_local_id();
@@ -347,14 +348,23 @@ int main(int argc, char* argv[])
 
                                 for (int i = 0; i < batch_size; ++i)
                                 {
-                                    data[thread_local_offset + i] = local_mem[thread_local_offset + i];
+#if defined(USE_ATOMIC_SUMMATOR)
+                                    sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
+                                        atomic(device_data[thread_local_offset + i]);
+
+                                    atomic.fetch_add(memory[thread_local_offset + i]);
+#else
+                                    group_data_pool[thread_local_offset + i] = memory[thread_local_offset + i];
+#endif
                                 }
                             });
-#endif // USE_LOCAL_MEMORY
+#endif // USE_LOCAL_MEMORY || USE_ATOMIC_SUMMATOR
                     });
             });
 
         queue.wait();
+
+#if !defined(USE_ATOMIC_SUMMATOR)
 
 #if defined(USE_GROUP_SUMMATOR)
         queue.submit(
@@ -381,7 +391,6 @@ int main(int argc, char* argv[])
                                 auto item_local_index = static_cast<size_t>(item.get_local_id());
                                 auto item_local_offset = batch_size * item_local_index;
 
-                                
                                 float thread_local_summ_batch[batch_size]{ 0.0 };
 
                                 for (size_t data_group_index = 0; data_group_index < num_groups; ++data_group_index)
@@ -422,6 +431,7 @@ int main(int argc, char* argv[])
             });
 #endif // !USE_GROUP_SUMMATOR
 
+#endif
         queue.wait();
 
         auto time_end = std::chrono::high_resolution_clock::now();
