@@ -218,9 +218,9 @@ int main(int argc, char* argv[])
     print_device_info(d_selector.select_device());
 
     // ѕараметры записи результатов
-    constexpr size_t N_x = 64;
-    constexpr size_t N_y = 64;
-    constexpr size_t N_z = 64;
+    constexpr size_t N_x = 64; //64;
+    constexpr size_t N_y = 64; //64;
+    constexpr size_t N_z = 64; //64;
     constexpr size_t N_l = 1; // = 12;
 
     // ѕараметры симул€ции
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
     constexpr size_t number_of_layers = 24;
 
     // ѕараметры вычислени€
-    constexpr size_t N_repeats = 10; //  8'000 / 2; // 0.25 * 1000 / 10;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
+    constexpr size_t N_repeats = 1; //  8'000 / 2; // 0.25 * 1000 / 10;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
     constexpr size_t work_group_size = 256; // 32;
     constexpr size_t num_groups = 128 * 2;
     constexpr size_t total_threads_count = num_groups * work_group_size;
@@ -297,7 +297,7 @@ int main(int argc, char* argv[])
         queue.submit(
             [&](sycl::handler& handler)
             {
-                sycl::stream output(1024, 256, handler);
+                //sycl::stream output(1024, 256, handler);
 
                 handler.parallel_for_work_group<class PhotonKernel>(sycl::range<1>(num_groups), sycl::range<1>(work_group_size),
                     [=](sycl::group<1> group) 
@@ -337,13 +337,90 @@ int main(int argc, char* argv[])
                                 }
                             });
 #ifdef USE_LOCAL_MEMORY
-                        for (int i = 0; i < N_x * N_y * N_z * N_l; ++i)
-                        {
-                            data[i] = local_mem[i];
-                        }
+                        group.parallel_for_work_item(
+                            [&](sycl::h_item<1> item)
+                            {
+                                constexpr auto batch_size = N_x * N_y * N_z * N_l / work_group_size;
+
+                                auto thread_local_id = item.get_local_id();
+                                auto thread_local_offset = batch_size * thread_local_id;
+
+                                for (int i = 0; i < batch_size; ++i)
+                                {
+                                    data[thread_local_offset + i] = local_mem[thread_local_offset + i];
+                                }
+                            });
 #endif // USE_LOCAL_MEMORY
                     });
             });
+
+        queue.wait();
+
+#if defined(USE_GROUP_SUMMATOR)
+        queue.submit(
+            [&](sycl::handler& handler)
+            {
+                constexpr auto work_group_size = N_y;
+                constexpr auto work_group_count = N_x;
+
+                static_assert(work_group_count <= 256);
+                static_assert(work_group_size <= 256);
+
+                handler.parallel_for_work_group(sycl::range<1>(work_group_count), sycl::range<1>(work_group_size),
+                    [=](sycl::group<1> group)
+                    {
+                        constexpr auto batch_size = (N_x * N_y * N_z * N_l) / (work_group_size * work_group_count);
+                        constexpr auto work_group_data_size = work_group_size * batch_size;
+
+                        auto work_group_index = static_cast<size_t>(group.get_group_id());
+                        auto work_group_data_offset = work_group_index * work_group_data_size;
+
+                        group.parallel_for_work_item(
+                            [&](sycl::h_item<1> item)
+                            {
+                                auto item_local_index = static_cast<size_t>(item.get_local_id());
+                                auto item_local_offset = batch_size * item_local_index;
+
+                                
+                                float thread_local_summ_batch[batch_size]{ 0.0 };
+
+                                for (size_t data_group_index = 0; data_group_index < num_groups; ++data_group_index)
+                                {
+                                    auto device_group_data = device_group_data_pool + N * data_group_index;
+
+                                    auto group_batch_data = device_group_data + work_group_data_offset + item_local_offset;
+
+                                    for (int i = 0; i < batch_size; ++i)
+                                    {
+                                        thread_local_summ_batch[i] += group_batch_data[i];
+                                    }
+                                }
+
+                                auto device_batch_data = device_data + work_group_data_offset + item_local_offset;
+
+                                for (int i = 0; i < batch_size; ++i)
+                                {
+                                    device_batch_data[i] = thread_local_summ_batch[i];
+                                }
+                            });
+                    });
+            });
+#else
+        queue.parallel_for(N,
+            [=](auto idx)
+            {
+                float summ = 0;
+
+                for (size_t data_group_index = 0; data_group_index < num_groups; ++data_group_index)
+                {
+                    float* data = device_group_data_pool + N * data_group_index;
+
+                    summ += data[idx];
+                }
+
+                device_data[idx] = summ;
+            });
+#endif // !USE_GROUP_SUMMATOR
 
         queue.wait();
 
@@ -351,23 +428,6 @@ int main(int argc, char* argv[])
         auto time_duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start);
 
         std::cout << "Elapsed time: " << time_duration.count() << " ms" << std::endl;
-
-        queue.parallel_for(N,
-            [=](auto idx)
-            {
-                int summ = 0;
-
-                for (size_t gid = 0; gid < num_groups; ++gid)
-                {
-                    float* data = device_group_data_pool + N * gid;
-
-                    summ += data[idx];
-                }
-
-                device_data[idx] = summ;
-            });
-
-        queue.wait();
 
         queue.memcpy(host_view.data(), device_data, host_view.size_of_data());
 

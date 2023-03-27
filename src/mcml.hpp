@@ -7,6 +7,7 @@
 #include "iofile.hpp"
 
 //#define USE_LOCAL_MEMORY
+#define USE_GROUP_SUMMATOR
 
 using atomic_array_ref = sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>;
 
