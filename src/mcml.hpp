@@ -6,9 +6,11 @@
 #include "matrix.hpp"
 #include "iofile.hpp"
 
-//#define USE_GROUP_SUMMATOR
-//#define USE_LOCAL_MEMORY
-#define USE_ATOMIC_SUMMATOR
+#define SYCL_CACHE_DISABLE_PERSISTENT 1
+
+// #define USE_GROUP_SUMMATOR
+// #define USE_LOCAL_MEMORY
+// #define USE_ATOMIC_SUMMATOR
 
 using atomic_array_ref = sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>;
 
@@ -68,11 +70,11 @@ struct mcg59_t
 		this->offset = RaiseToPower(MCG59_C, step);
 	}
 
-	double next()
+	inline double next()
 	{
 		this->value = (this->value * this->offset) & MCG59_DEC_M;
 
-		return (double)(this->value) / MCG59_M;
+		return static_cast<double>(this->value) / MCG59_M;
 	}
 
 	uint64_t RaiseToPower(uint64_t argument, unsigned int power)
@@ -563,7 +565,7 @@ struct PhotonStruct
 			sinp = -sycl::sqrt(1.0 - cosp * cosp);
 		}
 
-		if (std::abs(uz) > COSZERO)
+		if (sycl::abs(uz) > COSZERO)
 		{
 			const double temp = (uz >= 0.0) ? 1.0 : -1.0;
 
@@ -613,32 +615,35 @@ struct PhotonStruct
 
 	bool hit_boundary()
 	{
-		const auto& olayer = get_current_layer();
-
-		double dl_b;
-
-		if (uz > 0.0)
+		if (sycl::abs(uz) > 1e-10)
 		{
-			dl_b = (olayer.z1 - z) / uz;
-		}
-		else if (uz < 0.0)
-		{
-			dl_b = (olayer.z0 - z) / uz;
-		}
+			const auto& olayer = get_current_layer();
 
-		if (uz != 0.0 && step_size > dl_b)
-		{
-			const double mut = olayer.mua + olayer.mus;
+			double dl_b;
 
-			sleft = (step_size - dl_b) * mut;
-			step_size = dl_b;
+			if (uz > 0.0)
+			{
+				dl_b = olayer.z1;
+			}
+			else
+			{
+				dl_b = olayer.z0;
+			}
 
-			return true;
+			dl_b = (dl_b - z) / uz;
+
+			if (step_size > dl_b)
+			{
+				const double mut = olayer.mua + olayer.mus;
+
+				sleft = (step_size - dl_b) * mut;
+				step_size = dl_b;
+
+				return true;
+			}
 		}
-		else
-		{
-			return false;
-		}
+		
+		return false;
 	}
 
 	void roulette()
@@ -793,26 +798,17 @@ struct PhotonStruct
 
 	double SpinTheta(const double anisotropy)
 	{
-		double cost;
+		double cost = 2.0 * get_random() - 1.0;
 
-		if (anisotropy == 0.0)
+		if (sycl::abs(anisotropy) > 1e-10)
 		{
-			cost = 2.0 * get_random() - 1.0;
-		}
-		else
-		{
-			const double temp = (1.0 - anisotropy * anisotropy) / (1.0 - anisotropy + 2.0 * anisotropy * get_random());
+			const double anisotropy_sqr = anisotropy * anisotropy;
 
-			cost = (1 + anisotropy * anisotropy - temp * temp) / (2.0 * anisotropy);
+			const double temp = (1.0 - anisotropy_sqr) / (1.0 + anisotropy * cost);
 
-			if (cost < -1.0)
-			{
-				cost = -1.0;
-			}
-			else if (cost > 1.0)
-			{
-				cost = 1;
-			}
+			cost = 0.5 * (1.0 + anisotropy_sqr - temp * temp) / anisotropy;
+
+			cost = sycl::clamp(cost, -1.0, +1.0);
 		}
 
 		return cost;
@@ -845,14 +841,15 @@ struct PhotonStruct
 			const double mua = olayer.mua;
 			const double mus = olayer.mus;
 
-			if (sleft == 0.0)
+			if (sycl::abs(sleft) < 1e-10)
 			{
 				double rnd;
 
 				do
 				{
 					rnd = get_random();
-				} while (rnd <= 0.0);
+				} 
+				while (rnd <= 0.0);
 
 				step_size = -sycl::log(rnd) / (mua + mus);
 			}

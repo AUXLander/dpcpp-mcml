@@ -218,9 +218,9 @@ int main(int argc, char* argv[])
     print_device_info(d_selector.select_device());
 
     // ѕараметры записи результатов
-    constexpr size_t N_x = 24; //64;
-    constexpr size_t N_y = 24; //64;
-    constexpr size_t N_z = 24; //64;
+    constexpr size_t N_x = 16; //64;
+    constexpr size_t N_y = 16; //64;
+    constexpr size_t N_z = 16; //64;
     constexpr size_t N_l = 1; // = 12;
 
     // ѕараметры симул€ции
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
     constexpr size_t number_of_layers = 24;
 
     // ѕараметры вычислени€
-    constexpr size_t N_repeats = 100; //  8'000 / 2; // 0.25 * 1000 / 10;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
+    constexpr size_t N_repeats = 128; //  8'000 / 2; // 0.25 * 1000 / 10;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
     constexpr size_t work_group_size = 256; // 32;
     constexpr size_t num_groups = 128 * 2;
     constexpr size_t total_threads_count = num_groups * work_group_size;
@@ -365,7 +365,6 @@ int main(int argc, char* argv[])
         queue.wait();
 
 #if !defined(USE_ATOMIC_SUMMATOR)
-
 #if defined(USE_GROUP_SUMMATOR)
         queue.submit(
             [&](sycl::handler& handler)
@@ -431,8 +430,8 @@ int main(int argc, char* argv[])
             });
 #endif // !USE_GROUP_SUMMATOR
 
-#endif
         queue.wait();
+#endif
 
         auto time_end = std::chrono::high_resolution_clock::now();
         auto time_duration = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start);
