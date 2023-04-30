@@ -593,6 +593,10 @@ struct PhotonStruct
 	{
 		const auto& olayer = get_current_layer();
 
+		// TODO: solve divergency problem
+		// const auto layer_z = (uz > 0.0) ? olayer.z1 : (uz < 0.0) ? olayer.z0 : z;
+		// step_size = (layer_z - z) / uz;
+
 		if (uz > 0.0)
 		{
 			step_size = (olayer.z1 - z) / uz;
@@ -605,6 +609,8 @@ struct PhotonStruct
 		{
 			step_size = 0.0;
 		}
+
+		
 	}
 
 	bool hit_boundary()

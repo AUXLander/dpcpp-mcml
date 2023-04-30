@@ -1,0 +1,49 @@
+Name:                NVIDIA GeForce RTX 3060
+Version:             0.0
+Vendor:              NVIDIA Corporation
+Driver version:      CUDA 12.0
+
+Global memory size:  12884246528
+Local memory size:   49152
+
+N_x dimensions of x: 16
+N_y dimensions of y: 16
+N_z dimensions of z: 16
+N_l count of layers: 1
+
+Repeats per tread:   8000
+Work group size:     256
+Number of groups:    128
+
+Total photon runs:   262144000
+Total memory used:   2113536 bytes
+
+
+Elapsed time: 688326 ms
+
+Name:                NVIDIA GeForce RTX 3060
+Version:             0.0
+Vendor:              NVIDIA Corporation
+Driver version:      CUDA 12.0
+
+Global memory size:  12884246528
+Local memory size:   49152
+
+N_x dimensions of x: 16
+N_y dimensions of y: 16
+N_z dimensions of z: 16
+N_l count of layers: 1
+
+Repeats per tread:   32000
+Work group size:     256
+Number of groups:    32
+
+Total photon runs:   262144000
+Total memory used:   540672 bytes
+
+
+Elapsed time: 1100080 ms
+
+меньше вычислений на тред
+больше размер слоя (нет)
+больше потоков
