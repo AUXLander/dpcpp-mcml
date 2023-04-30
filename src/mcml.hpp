@@ -2,15 +2,9 @@
 #include <cmath>
 #include <random>
 #include <CL/sycl.hpp>
-//#include <oneapi/dpl/random>
+#include "configs/default.h"
 #include "matrix.hpp"
 #include "iofile.hpp"
-
-#define SYCL_CACHE_DISABLE_PERSISTENT 1
-
-// #define USE_GROUP_SUMMATOR
-// #define USE_LOCAL_MEMORY
-// #define USE_ATOMIC_SUMMATOR
 
 using atomic_array_ref = sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>;
 
@@ -415,7 +409,7 @@ struct PhotonStruct
 
 		inline void __track(float value)
 		{
-#ifdef USE_LOCAL_MEMORY
+#ifdef FEATURE_USE_LOCAL_MEMORY
 			sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::local_space>
 				atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
 #else

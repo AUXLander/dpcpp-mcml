@@ -1,9 +1,10 @@
 #include <CL/sycl.hpp>
-//#include <CL/sycl/backend/cuda.hpp>
 #include <vector>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+
+#include "configs/default.h"
 
 #include "matrix.hpp"
 #include "iofile.hpp"
@@ -218,19 +219,19 @@ int main(int argc, char* argv[])
     print_device_info(d_selector.select_device());
 
     // ѕараметры записи результатов
-    constexpr size_t N_x = 16; //64;
-    constexpr size_t N_y = 16; //64;
-    constexpr size_t N_z = 16; //64;
-    constexpr size_t N_l = 1; // = 12;
+    constexpr size_t N_x = LAYER_OUTPUT_SIZE_X; //64;
+    constexpr size_t N_y = LAYER_OUTPUT_SIZE_Y; //64;
+    constexpr size_t N_z = LAYER_OUTPUT_SIZE_Z; //64;
+    constexpr size_t N_l = LAYER_OUTPUT_COUNT; // = 12;
 
     // ѕараметры симул€ции
-    constexpr size_t random_seed = 42;
-    constexpr size_t number_of_layers = 24;
+    constexpr size_t random_seed = SIMULATION_RANDOM_SEED;
+    constexpr size_t number_of_layers = SIMULATION_LAYERS_COUNT;
 
     // ѕараметры вычислени€
-    constexpr size_t N_repeats = 128; //  8'000 / 2; // 0.25 * 1000 / 10;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
-    constexpr size_t work_group_size = 256; // 32;
-    constexpr size_t num_groups = 128 * 2;
+    constexpr size_t N_repeats = SIMULATION_REPEATS_COUNT; //  8'000 / 2; // 0.25 * 1000 / 10;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
+    constexpr size_t work_group_size = CONFIGURATION_WORK_GROUP_COUNT; // 32;
+    constexpr size_t num_groups = CONFIGURATION_WORK_GROUP_SIZE;
     constexpr size_t total_threads_count = num_groups * work_group_size;
     constexpr size_t total_photons_runs = N_repeats * work_group_size * num_groups;
 
@@ -306,11 +307,11 @@ int main(int argc, char* argv[])
 
                         float* group_data_pool = device_group_data_pool + N * gid;
 
-#if defined(USE_LOCAL_MEMORY)
+#if defined(FEATURE_USE_LOCAL_MEMORY)
                         float memory[N_x * N_y * N_z * N_l]{ 0.0 };
 #else
                         float* memory = group_data_pool;
-#endif // USE_LOCAL_MEMORY
+#endif // FEATURE_USE_LOCAL_MEMORY
 
                         group.parallel_for_work_item(
                             [&](sycl::h_item<1> item)
@@ -336,7 +337,7 @@ int main(int argc, char* argv[])
                                 }
                             });
 
-#if defined(USE_LOCAL_MEMORY) || defined(USE_ATOMIC_SUMMATOR)
+#if defined(FEATURE_USE_LOCAL_MEMORY) || defined(FEATURE_USE_ATOMIC_SUMMATOR)
                         group.parallel_for_work_item(
                             [&](sycl::h_item<1> item)
                             {
@@ -348,7 +349,7 @@ int main(int argc, char* argv[])
 
                                 for (int i = 0; i < batch_size; ++i)
                                 {
-#if defined(USE_ATOMIC_SUMMATOR)
+#if defined(FEATURE_USE_ATOMIC_SUMMATOR)
                                     sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
                                         atomic(device_data[thread_local_offset + i]);
 
@@ -358,14 +359,14 @@ int main(int argc, char* argv[])
 #endif
                                 }
                             });
-#endif // USE_LOCAL_MEMORY || USE_ATOMIC_SUMMATOR
+#endif // FEATURE_USE_LOCAL_MEMORY || FEATURE_USE_ATOMIC_SUMMATOR
                     });
             });
 
         queue.wait();
 
-#if !defined(USE_ATOMIC_SUMMATOR)
-#if defined(USE_GROUP_SUMMATOR)
+#if !defined(FEATURE_USE_ATOMIC_SUMMATOR)
+#if defined(FEATURE_USE_GROUP_SUMMATOR)
         queue.submit(
             [&](sycl::handler& handler)
             {
@@ -428,7 +429,7 @@ int main(int argc, char* argv[])
 
                 device_data[idx] = summ;
             });
-#endif // !USE_GROUP_SUMMATOR
+#endif // !FEATURE_USE_GROUP_SUMMATOR
 
         queue.wait();
 #endif

@@ -77,3 +77,39 @@ zmax: 69
 real	6m59.085s
 user	6m56.961s
 sys	0m0.240s
+./dpcpp-mcml-cuda: error while loading shared libraries: libsycl.so.6: cannot open shared object file: No such file or directory
+
+real	0m0.043s
+user	0m0.002s
+sys	0m0.000s
+./dpcpp-mcml-cuda: error while loading shared libraries: libsycl.so.6: cannot open shared object file: No such file or directory
+
+real	0m0.008s
+user	0m0.001s
+sys	0m0.000s
+Name:                NVIDIA GeForce RTX 3060
+Version:             0.0
+Vendor:              NVIDIA Corporation
+Driver version:      CUDA 12.0
+                                                                               
+Global memory size:  12884246528
+Local memory size:   49152
+
+N_x dimensions of x: 16
+N_y dimensions of y: 16
+N_z dimensions of z: 16
+N_l count of layers: 1
+                                            
+Repeats per tread:   4000
+Work group size:     256
+Number of groups:    256
+                                            
+Total treads count:  65536
+Total photon runs:   262144000
+Total memory used:   4210688 bytes
+                                            
+Elapsed time: 1079 ms
+Allocator stats: 2 / 2
+Allocator stats: 1 / 1
+0.85user 0.10system 0:01.50elapsed 63%CPU (0avgtext+0avgdata 159680maxresident)k
+45344inputs+664outputs (271major+11636minor)pagefaults 0swaps

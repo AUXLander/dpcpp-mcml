@@ -351,5 +351,9 @@ MigrationBackup/
 
 # User settings
 build/*
+build__
+build_
+
+cuda/*.bin
 
 !build/.gitignore

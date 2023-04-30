@@ -37,6 +37,7 @@ add_executable(
     src/matrix.hpp
 	src/iofile.hpp
 	src/pipe.hpp
+	src/configs/default.h
 )
 
 
