@@ -134,7 +134,11 @@ struct sycl_device_allocator : public sycl_base_allocator
     template<class T>
     T* allocate(size_t size)
     {
+#ifdef FEATURE_ALIGNED_DEVICE_ALLOC
+        auto pointer = sycl::aligned_alloc_device<T>(sizeof(T), size, __queue);
+#else
         auto pointer = sycl::malloc_device<T>(size, __queue);
+#endif
 
         if (pointer)
         {
@@ -186,12 +190,13 @@ bool has_local_memory(const sycl::device &device)
 
 void print_device_info(const sycl::device& device)
 {
-    std::cout << "Name:                  " << device.get_info<sycl::info::device::name>()            << std::endl;
-    std::cout << "Version:               " << device.get_info<sycl::info::device::version>()         << std::endl;
-    std::cout << "Vendor:                " << device.get_info<sycl::info::device::vendor>()          << std::endl;
-    std::cout << "Driver version:        " << device.get_info<sycl::info::device::driver_version>()  << std::endl;
-    std::cout << "                                                                                 " << std::endl;
-    std::cout << "Global memory size:    " << device.get_info<sycl::info::device::global_mem_size>() << std::endl;
+    std::cout << "Name:                  " << device.get_info<sycl::info::device::name>()                << std::endl;
+    std::cout << "Version:               " << device.get_info<sycl::info::device::version>()             << std::endl;
+    std::cout << "Vendor:                " << device.get_info<sycl::info::device::vendor>()              << std::endl;
+    std::cout << "Driver version:        " << device.get_info<sycl::info::device::driver_version>()      << std::endl;
+    std::cout << "                                                                                 "     << std::endl;
+    std::cout << "Max work group size:   " << device.get_info<sycl::info::device::max_work_group_size>() << std::endl;
+    std::cout << "Global memory size:    " << device.get_info<sycl::info::device::global_mem_size>()     << std::endl;
 
     bool has_local_mem = has_local_memory(device);
 
@@ -212,8 +217,11 @@ void print_device_info(const sycl::device& device)
 int main(int argc, char* argv[])
 {
     // ¬ыбор вычислительного устройства
+#if defined(MCML_CPU_SINGLE_THREAD) || defined(MCML_CPU_MULTIPLE_THREADS)
+    sycl::cpu_selector d_selector;
+#else
     sycl::gpu_selector d_selector;
-    // sycl::cpu_selector d_selector;
+#endif
 
     // ¬ывод характеристик вычислительного устройства
     print_device_info(d_selector.select_device());
@@ -230,7 +238,7 @@ int main(int argc, char* argv[])
 
     // ѕараметры вычислени€
     constexpr size_t N_repeats = SIMULATION_REPEATS_COUNT; //  8'000 / 2; // 0.25 * 1000 / 10;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
-    constexpr size_t work_group_size = CONFIGURATION_WORK_GROUP_COUNT; // 32;
+    constexpr size_t work_group_size = CONFIGURATION_WORK_GROUP_THREADS_COUNT; // 32;
     constexpr size_t num_groups = CONFIGURATION_WORK_GROUP_SIZE;
     constexpr size_t total_threads_count = num_groups * work_group_size;
     constexpr size_t total_photons_runs = N_repeats * work_group_size * num_groups;

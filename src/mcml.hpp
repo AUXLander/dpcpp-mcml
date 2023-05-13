@@ -17,7 +17,7 @@ constexpr double COSZERO = 1.0 - 1.0E-12;
 constexpr double COS90D = 1.0E-6;
 /* cosine of about 1.57 - 1e-6 rad. */
 
-constexpr double PI = 3.1415926;
+constexpr double PI = 3.1415926F;
 constexpr double WEIGHT = 1E-4;		/* Critical weight for roulette. */
 constexpr double CHANCE = 0.1; /* Chance of roulette survival. */
 
@@ -64,11 +64,11 @@ struct mcg59_t
 		this->offset = RaiseToPower(MCG59_C, step);
 	}
 
-	inline double next()
+	inline float next()
 	{
 		this->value = (this->value * this->offset) & MCG59_DEC_M;
 
-		return static_cast<double>(this->value) / MCG59_M;
+		return static_cast<float>(this->value) / MCG59_M;
 	}
 
 	uint64_t RaiseToPower(uint64_t argument, unsigned int power)
@@ -95,13 +95,13 @@ struct mcg59_t
 
 struct LayerStruct
 {
-	double z0, z1;	/* z coordinates of a layer. [cm] */
-	double n;			/* refractive index of a layer. */
-	double mua;	    /* absorption coefficient. [1/cm] */
-	double mus;	    /* scattering coefficient. [1/cm] */
-	double anisotropy;		    /* anisotropy. */
+	float z0, z1;	/* z coordinates of a layer. [cm] */
+	float n;			/* refractive index of a layer. */
+	float mua;	    /* absorption coefficient. [1/cm] */
+	float mus;	    /* scattering coefficient. [1/cm] */
+	float anisotropy;		    /* anisotropy. */
 
-	double cos_crit0, cos_crit1;
+	float cos_crit0, cos_crit1;
 
 	inline bool is_glass() const
 	{
@@ -130,12 +130,12 @@ struct InputStruct
 	/* 'A' for ASCII, */
 	/* 'B' for binary. */
 	long num_photons; 		/* to be traced. */
-	double Wth; 				/* play roulette if photon */
+	float Wth; 				/* play roulette if photon */
 	/* weight < Wth.*/
 
-	double dz;				/* z grid separation.[cm] */
-	double dr;				/* r grid separation.[cm] */
-	double da;				/* alpha grid separation. */
+	float dz;				/* z grid separation.[cm] */
+	float dr;				/* r grid separation.[cm] */
+	float da;				/* alpha grid separation. */
 	/* [radian] */
 	short nz;					/* array range 0..nz-1. */
 	short nr;					/* array range 0..nr-1. */
@@ -213,15 +213,6 @@ struct InputStruct
 
 		if (num_layers > 3)
 		{
-			//layerspecs[3].z0 = 0.03;
-			//layerspecs[3].z1 = 0.05;
-			//layerspecs[3].n = 1.4;
-			//layerspecs[3].mua = 3.3;
-			//layerspecs[3].mus = 192.0;
-			//layerspecs[3].anisotropy = 0.82;
-			//layerspecs[3].cos_crit0 = 0.0;
-			//layerspecs[3].cos_crit1 = 0.0;
-			 
 			layerspecs[3].z0 = 0.01;
 			layerspecs[3].z1 = 0.03;
 			layerspecs[3].n = 1.4;
@@ -264,83 +255,6 @@ struct InputStruct
 		layerspecs[num_layers - 1].anisotropy = std::numeric_limits<double>::min();
 		layerspecs[num_layers - 1].cos_crit0 = std::numeric_limits<double>::min();
 		layerspecs[num_layers - 1].cos_crit1 = std::numeric_limits<double>::min();
-
-		//if (num_layers > 5)
-		//{
-
-		//}
-
-		//if (num_layers > 6)
-		//{
-		//	layerspecs[6].z0 = 0.14;
-		//	layerspecs[6].z1 = 0.2;
-		//	layerspecs[6].n = 1.4;
-		//	layerspecs[6].mua = 2.4;
-		//	layerspecs[6].mus = 194;
-		//	layerspecs[6].anisotropy = 0.82;
-		//	layerspecs[6].cos_crit0 = 0.0;
-		//	layerspecs[6].cos_crit1 = 0.6998542;
-		//}
-
-		//if (num_layers > 7)
-		//{
-		//	layerspecs[7].z0 = 0.14;
-		//	layerspecs[7].z1 = 0.2;
-		//	layerspecs[7].n = 1.4;
-		//	layerspecs[7].mua = 2.4;
-		//	layerspecs[7].mus = 194;
-		//	layerspecs[7].anisotropy = 0.82;
-		//	layerspecs[7].cos_crit0 = 0.0;
-		//	layerspecs[7].cos_crit1 = 0.6998542;
-		//}
-
-		//if (num_layers > 8)
-		//{
-		//	layerspecs[8].z0 = 0.14;
-		//	layerspecs[8].z1 = 0.2;
-		//	layerspecs[8].n = 1.4;
-		//	layerspecs[8].mua = 2.4;
-		//	layerspecs[8].mus = 194;
-		//	layerspecs[8].anisotropy = 0.82;
-		//	layerspecs[8].cos_crit0 = 0.0;
-		//	layerspecs[8].cos_crit1 = 0.6998542;
-		//}
-
-		//if (num_layers > 9)
-		//{
-		//	layerspecs[9].z0 = 0.14;
-		//	layerspecs[9].z1 = 0.2;
-		//	layerspecs[9].n = 1.4;
-		//	layerspecs[9].mua = 2.4;
-		//	layerspecs[9].mus = 194;
-		//	layerspecs[9].anisotropy = 0.82;
-		//	layerspecs[9].cos_crit0 = 0.0;
-		//	layerspecs[9].cos_crit1 = 0.6998542;
-		//}
-
-		//if (num_layers > 10)
-		//{
-		//	layerspecs[10].z0 = 0.14;
-		//	layerspecs[10].z1 = 0.2;
-		//	layerspecs[10].n = 1.4;
-		//	layerspecs[10].mua = 2.4;
-		//	layerspecs[10].mus = 194;
-		//	layerspecs[10].anisotropy = 0.82;
-		//	layerspecs[10].cos_crit0 = 0.0;
-		//	layerspecs[10].cos_crit1 = 0.6998542;
-		//}
-
-		//if (num_layers > 11)
-		//{
-		//	layerspecs[11].z0 = std::numeric_limits<double>::min();
-		//	layerspecs[11].z1 = std::numeric_limits<double>::min();
-		//	layerspecs[11].n = 1.0;
-		//	layerspecs[11].mua = std::numeric_limits<double>::min();
-		//	layerspecs[11].mus = std::numeric_limits<double>::min();
-		//	layerspecs[11].anisotropy = std::numeric_limits<double>::min();
-		//	layerspecs[11].cos_crit0 = std::numeric_limits<double>::min();
-		//	layerspecs[11].cos_crit1 = std::numeric_limits<double>::min();
-		//}
 	}
 
 	void free()
@@ -352,9 +266,9 @@ struct InputStruct
 	}
 };
 
-double RFresnel(double incidentRefractiveIndex, double transmitRefractiveIndex, double incidentCos, double &transmitCos)
+float RFresnel(float incidentRefractiveIndex, float transmitRefractiveIndex, float incidentCos, float& transmitCos)
 {
-	double reflectance;
+	float reflectance;
 
 	if (incidentRefractiveIndex == transmitRefractiveIndex)
 	{
@@ -374,8 +288,8 @@ double RFresnel(double incidentRefractiveIndex, double transmitRefractiveIndex, 
 	}
 	else
 	{
-		double incidentSin = sycl::sqrt(1.0 - incidentCos * incidentCos);
-		double transmitSin = incidentRefractiveIndex * incidentSin / transmitRefractiveIndex;
+		float incidentSin = sycl::sqrt(1.0F - incidentCos * incidentCos);
+		float transmitSin = incidentRefractiveIndex * incidentSin / transmitRefractiveIndex;
 
 		if (transmitSin >= 1.0)
 		{
@@ -386,12 +300,12 @@ double RFresnel(double incidentRefractiveIndex, double transmitRefractiveIndex, 
 		{
 			transmitCos = sycl::sqrt(1.0 - transmitSin * transmitSin);
 
-			double cap = incidentCos * transmitCos - incidentSin * transmitSin; /* c+ = cc - ss. */
-			double cam = incidentCos * transmitCos + incidentSin * transmitSin; /* c- = cc + ss. */
-			double sap = incidentSin * transmitCos + incidentCos * transmitSin; /* s+ = sc + cs. */
-			double sam = incidentSin * transmitCos - incidentCos * transmitSin; /* s- = sc - cs. */
+			float cap = incidentCos * transmitCos - incidentSin * transmitSin; /* c+ = cc - ss. */
+			float cam = incidentCos * transmitCos + incidentSin * transmitSin; /* c- = cc + ss. */
+			float sap = incidentSin * transmitCos + incidentCos * transmitSin; /* s+ = sc + cs. */
+			float sam = incidentSin * transmitCos - incidentCos * transmitSin; /* s- = sc - cs. */
 
-			reflectance = 0.5 * sam * sam * (cam * cam + cap * cap) / (sap * sap * cam * cam);
+			reflectance = 0.5F * sam * sam * (cam * cam + cap * cap) / (sap * sap * cam * cam);
 		}
 	}
 
@@ -403,17 +317,17 @@ struct PhotonStruct
 	template<class T>
 	class weight_tracker
 	{
-		double                 __weight;
+		float                  __weight;
 		PhotonStruct&          __ps;
 		matrix_view_adaptor<T> __view;
 
-		inline void __track(float value)
+		inline void __track(T value)
 		{
 #ifdef FEATURE_USE_LOCAL_MEMORY
-			sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::local_space>
+			sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::local_space>
 				atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
 #else
-			sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
+			sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
 				atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
 #endif
 
@@ -425,25 +339,25 @@ struct PhotonStruct
 
 	public:
 
-		weight_tracker(double weight, PhotonStruct& ps, matrix_view_adaptor<T>& view) :
+		weight_tracker(float weight, PhotonStruct& ps, matrix_view_adaptor<T>& view) :
 			__weight{ weight }, __ps{ ps }, __view{ view }
 		{;}
 
-		weight_tracker<T>& operator=(const double& value)
+		weight_tracker<T>& operator=(T value)
 		{
 			__weight = value;
 
 			return *this;
 		}
 
-		weight_tracker<T>& operator+=(const double& value)
+		weight_tracker<T>& operator+=(T value)
 		{
 			__track(value);
 
 			return *this;
 		}
 
-		weight_tracker<T>& operator-=(const double& value)
+		weight_tracker<T>& operator-=(T value)
 		{
 			__track(value);
 
@@ -452,43 +366,43 @@ struct PhotonStruct
 			return *this;
 		}
 
-		weight_tracker<T>& operator/=(const double& value)
+		weight_tracker<T>& operator/=(T value)
 		{
 			__weight /= value;
 
 			return *this;
 		}
 
-		weight_tracker<T>& operator*=(const double& value)
+		weight_tracker<T>& operator*=(T value)
 		{
 			__weight *= value;
 
 			return *this;
 		}
 
-		inline double operator*(const double& value) const
+		inline T operator*(T value) const
 		{
 			return __weight * value;
 		}
 
-		inline bool operator==(const double& value) const
+		inline bool operator==(T value) const
 		{
 			return __weight == value;
 		}
 
-		inline bool operator!=(const double& value) const
+		inline bool operator!=(T value) const
 		{
 			return __weight != value;
 		}
 
-		inline bool operator<(const double& value) const
+		inline bool operator<(T value) const
 		{
 			return __weight < value;
 		}
 	};
 
-	double x{ 0 }, y{ 0 }, z{ 0 };    // vector of position
-	double ux{ 0 }, uy{ 0 }, uz{ 0 }; // vector of direction
+	float x{ 0 }, y{ 0 }, z{ 0 };    // vector of position
+	float ux{ 0 }, uy{ 0 }, uz{ 0 }; // vector of direction
 
 	weight_tracker<float> w;
 
@@ -496,8 +410,8 @@ struct PhotonStruct
 
 	size_t layer{ 0 };
 
-	double sleft{ 0 };
-	double step_size{ 0 };
+	float sleft{ 0 };
+	float step_size{ 0 };
 
 	mcg59_t &random;
 
@@ -511,7 +425,7 @@ struct PhotonStruct
 
 	~PhotonStruct() = default;
 
-	void init(const double Rspecular)
+	void init(float Rspecular)
 	{
 		w = 1.0 - Rspecular;
 		dead = 0;
@@ -534,34 +448,34 @@ struct PhotonStruct
 		}
 	}
 
-	void spin(const double anisotropy)
+	void spin(float anisotropy)
 	{
-		const double ux = this->ux;
-		const double uy = this->uy;
-		const double uz = this->uz;
+		const auto ux = this->ux;
+		const auto uy = this->uy;
+		const auto uz = this->uz;
 
-		const double cost = SpinTheta(anisotropy);
-		const double sint = sycl::sqrt(1.0 - cost * cost);
+		const auto cost = SpinTheta(anisotropy);
+		const auto sint = sycl::sqrt(1.0F - cost * cost);
 
-		const double psi = 2.0 * PI * get_random();
+		const auto psi = 2.0F * (float)PI * get_random();
 
-		const double cosp = sycl::cos(psi);
+		const auto cosp = sycl::cos(psi);
 
 
-		double sinp; // = std::sin(psi);
+		float sinp; // = std::sin(psi);
 
 		if (psi < PI)
 		{
-			sinp = sycl::sqrt(1.0 - cosp * cosp);
+			sinp = sycl::sqrt(1.0F - cosp * cosp);
 		}
 		else
 		{
-			sinp = -sycl::sqrt(1.0 - cosp * cosp);
+			sinp = -sycl::sqrt(1.0F - cosp * cosp);
 		}
 
 		if (sycl::abs(uz) > COSZERO)
 		{
-			const double temp = (uz >= 0.0) ? 1.0 : -1.0;
+			const auto temp = (uz >= 0.0) ? 1.0F : -1.0F;
 
 			this->ux = sint * cosp;
 			this->uy = sint * sinp;
@@ -569,7 +483,7 @@ struct PhotonStruct
 		}
 		else
 		{
-			const double temp = sycl::sqrt(1.0 - uz * uz);
+			const auto temp = sycl::sqrt<float>(1.0F - uz * uz);
 
 			this->ux = sint * (ux * uz * cosp - uy * sinp) / temp + ux * cost;
 			this->uy = sint * (uy * uz * cosp + ux * sinp) / temp + uy * cost;
@@ -609,8 +523,6 @@ struct PhotonStruct
 		{
 			step_size = 0.0;
 		}
-
-		
 	}
 
 	bool hit_boundary()
@@ -619,7 +531,7 @@ struct PhotonStruct
 		{
 			const auto& olayer = get_current_layer();
 
-			double dl_b;
+			float dl_b;
 
 			if (uz > 0.0)
 			{
@@ -634,7 +546,7 @@ struct PhotonStruct
 
 			if (step_size > dl_b)
 			{
-				const double mut = olayer.mua + olayer.mus;
+				const auto mut = olayer.mua + olayer.mus;
 
 				sleft = (step_size - dl_b) * mut;
 				step_size = dl_b;
@@ -648,7 +560,7 @@ struct PhotonStruct
 
 	void roulette()
 	{
-		if (w != 0.0 && get_random() < CHANCE)
+		if (w != 0.0F && get_random() < CHANCE)
 		{
 			w /= CHANCE;
 		}
@@ -658,60 +570,58 @@ struct PhotonStruct
 		}
 	}
 
-	void record_r(double reflectance)
+	void record_r(float reflectance)
 	{
-		size_t ir, ia;
+		//size_t ir, ia;
 
-		ir = static_cast<size_t>(sycl::sqrt(x * x + y * y) / input.dr);
-		ir = std::min<size_t>(ir, input.nr - 1);
+		//ir = static_cast<size_t>(sycl::sqrt(x * x + y * y) / input.dr);
+		//ir = std::min<size_t>(ir, input.nr - 1);
 
-		ia = static_cast<size_t>(std::acos(-uz) / input.da);
-		ia = std::min<size_t>(ia, input.na - 1);
+		//ia = static_cast<size_t>(std::acos(-uz) / input.da);
+		//ia = std::min<size_t>(ia, input.na - 1);
 
 		w *= reflectance;
 	}
 
-	void record_t(double reflectance)
+	void record_t(float reflectance)
 	{
-		size_t ir, ia;
+		//size_t ir, ia;
 
-		ir = static_cast<size_t>(sycl::sqrt(x * x + y * y) / input.dr);
-		ir = std::min<size_t>(ir, input.nr - 1);
+		//ir = static_cast<size_t>(sycl::sqrt(x * x + y * y) / input.dr);
+		//ir = std::min<size_t>(ir, input.nr - 1);
 
-		ia = static_cast<size_t>(std::acos(uz) / input.da);
-		ia = std::min<size_t>(ia, input.na - 1);
+		//ia = static_cast<size_t>(std::acos(uz) / input.da);
+		//ia = std::min<size_t>(ia, input.na - 1);
 
 		w *= reflectance;
 	}
 
 	void drop()
 	{
-		double dwa;
-		size_t iz, ir;
-		double mua, mus;
+		//size_t iz, ir;
 
-		iz = static_cast<size_t>(z / input.dz);
-		iz = std::min<size_t>(iz, input.nz - 1);
+		/*iz = static_cast<size_t>(z / input.dz);
+		iz = sycl::min<size_t>(iz, input.nz - 1);
 
 		ir = static_cast<size_t>(sycl::sqrt(x * x + y * y) / input.dr);
-		ir = std::min<size_t>(ir, input.nr - 1);
+		ir = sycl::min<size_t>(ir, input.nr - 1);*/
 
 		const auto& olayer = get_current_layer();
 
-		mua = olayer.mua;
-		mus = olayer.mus;
+		auto mua = olayer.mua;
+		auto mus = olayer.mus;
 
-		dwa = w * mua / (mua + mus);
+		auto dwa = w * mua / (mua + mus);
 
 		w -= dwa;
 	}
 
 	void cross_up_or_not()
 	{
-		double uz1 = 0.0;
-		double r = 0.0;
-		double ni = layerspecs[layer].n;
-		double nt = layerspecs[layer - 1].n;
+		float uz1 = 0.0;
+		float r = 0.0;
+		float ni = layerspecs[layer].n;
+		float nt = layerspecs[layer - 1].n;
 
 		if (-uz <= layerspecs[layer].cos_crit0)
 		{
@@ -747,10 +657,10 @@ struct PhotonStruct
 
 	void cross_down_or_not()
 	{
-		double uz1 = 0.0;
-		double r = 0.0;
-		double ni = layerspecs[layer].n;
-		double nt = layerspecs[layer + 1].n;
+		float uz1 = 0.0;
+		float r = 0.0;
+		float ni = layerspecs[layer].n;
+		float nt = layerspecs[layer + 1].n;
 
 		if (uz <= layerspecs[layer].cos_crit1)
 		{
@@ -796,19 +706,19 @@ struct PhotonStruct
 		}
 	}
 
-	double SpinTheta(const double anisotropy)
+	float SpinTheta(float anisotropy)
 	{
-		double cost = 2.0 * get_random() - 1.0;
+		float cost = 2.0 * get_random() - 1.0;
 
 		if (sycl::abs(anisotropy) > 1e-10)
 		{
-			const double anisotropy_sqr = anisotropy * anisotropy;
+			const float anisotropy_sqr = anisotropy * anisotropy;
 
-			const double temp = (1.0 - anisotropy_sqr) / (1.0 + anisotropy * cost);
+			const float temp = (1.0 - anisotropy_sqr) / (1.0 + anisotropy * cost);
 
 			cost = 0.5 * (1.0 + anisotropy_sqr - temp * temp) / anisotropy;
 
-			cost = sycl::clamp(cost, -1.0, +1.0);
+			cost = sycl::clamp(cost, -1.0f, +1.0f);
 		}
 
 		return cost;
@@ -838,26 +748,40 @@ struct PhotonStruct
 		}
 		else
 		{
-			const double mua = olayer.mua;
-			const double mus = olayer.mus;
+			const auto mua = olayer.mua;
+			const auto mus = olayer.mus;
 
-			if (sycl::abs(sleft) < 1e-10)
+			float rnd;
+
+			do
 			{
-				double rnd;
+				rnd = get_random();
+			} while (rnd <= 0.0);
 
-				do
-				{
-					rnd = get_random();
-				} 
-				while (rnd <= 0.0);
+			sleft = sycl::abs(sleft) < 1e-10 ? -sycl::log(rnd) : sleft;
 
-				step_size = -sycl::log(rnd) / (mua + mus);
-			}
-			else
-			{
-				step_size = sleft / (mua + mus);
-				sleft = 0.0;
-			}
+			step_size = sleft / (mua + mus);
+
+			//if (sycl::abs(sleft) < 1e-10)
+			//{
+			//	double rnd;
+
+			//	do
+			//	{
+			//		rnd = get_random();
+			//	} 
+			//	while (rnd <= 0.0);
+
+			//	step_size = 1.0 / (6 * rnd * (mua + mus));
+
+			//	// step_size = -sycl::log(rnd) / (mua + mus);
+			//}
+			//else
+			//{
+			//	step_size = sleft / (mua + mus);
+			//}
+
+			sleft = 0.0;
 
 			if (hit_boundary())
 			{
@@ -883,17 +807,17 @@ struct PhotonStruct
 		return layerspecs[layer];
 	}
 
-	inline double get_random()
+	inline float get_random()
 	{
 		return random.next();
 	}
 };
 
-double Rspecular(LayerStruct* Layerspecs_Ptr)
+float Rspecular(LayerStruct* Layerspecs_Ptr)
 {
-	double r1;
-	double r2;
-	double temp;
+	float r1;
+	float r2;
+	float temp;
 
 	temp = (Layerspecs_Ptr[0].n - Layerspecs_Ptr[1].n) / (Layerspecs_Ptr[0].n + Layerspecs_Ptr[1].n);
 	r1 = temp * temp;

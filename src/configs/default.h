@@ -1,20 +1,87 @@
 #ifndef MCML_CONFIG
 #define MCML_CONFIG
 
+#define MCML_CPU_SINGLE_THREAD
+// #define MCML_CPU_MULTIPLE_THREADS
+// #define MCML_GPU_UHD_MULTIPLE_THREADS
+// #define MCML_GPU_MULTIPLE_THREADS
+
+#ifdef MCML_CPU_SINGLE_THREAD
 constexpr size_t LAYER_OUTPUT_SIZE_X = 16;
 constexpr size_t LAYER_OUTPUT_SIZE_Y = 16;
 constexpr size_t LAYER_OUTPUT_SIZE_Z = 16;
-constexpr size_t LAYER_OUTPUT_COUNT  = 1;
+constexpr size_t LAYER_OUTPUT_COUNT = 1;
 
-constexpr size_t SIMULATION_RANDOM_SEED   = 42;
-constexpr size_t SIMULATION_LAYERS_COUNT  = 24;
-constexpr size_t SIMULATION_REPEATS_COUNT = 1024; // 128;
+constexpr size_t SIMULATION_RANDOM_SEED = 42;
+constexpr size_t SIMULATION_LAYERS_COUNT = 24;
+constexpr size_t SIMULATION_REPEATS_COUNT = 1024 * 256 * 256 / 6;
 
-constexpr size_t CONFIGURATION_WORK_GROUP_COUNT = 256;
-constexpr size_t CONFIGURATION_WORK_GROUP_SIZE  = 256;
+constexpr size_t CONFIGURATION_WORK_GROUP_THREADS_COUNT = 1;
+constexpr size_t CONFIGURATION_WORK_GROUP_SIZE = 1;
 
 // #define FEATURE_USE_GROUP_SUMMATOR
 // #define FEATURE_USE_LOCAL_MEMORY
 // #define FEATURE_USE_ATOMIC_SUMMATOR
+#define FEATURE_ALIGNED_DEVICE_ALLOC
+#endif
+
+#ifdef MCML_CPU_MULTIPLE_THREADS
+constexpr size_t LAYER_OUTPUT_SIZE_X = 16;
+constexpr size_t LAYER_OUTPUT_SIZE_Y = 16;
+constexpr size_t LAYER_OUTPUT_SIZE_Z = 16;
+constexpr size_t LAYER_OUTPUT_COUNT = 1;
+
+constexpr size_t SIMULATION_RANDOM_SEED = 42;
+constexpr size_t SIMULATION_LAYERS_COUNT = 24;
+constexpr size_t SIMULATION_REPEATS_COUNT = 1024 * 256 * 256 / 16 / 6;
+
+constexpr size_t CONFIGURATION_WORK_GROUP_THREADS_COUNT = 1;
+constexpr size_t CONFIGURATION_WORK_GROUP_SIZE = 16;
+
+// #define FEATURE_USE_GROUP_SUMMATOR
+// #define FEATURE_USE_LOCAL_MEMORY
+// #define FEATURE_USE_ATOMIC_SUMMATOR
+#define FEATURE_ALIGNED_DEVICE_ALLOC
+#endif
+
+#ifdef MCML_GPU_UHD_MULTIPLE_THREADS
+constexpr size_t LAYER_OUTPUT_SIZE_X = 16;
+constexpr size_t LAYER_OUTPUT_SIZE_Y = 16;
+constexpr size_t LAYER_OUTPUT_SIZE_Z = 16;
+constexpr size_t LAYER_OUTPUT_COUNT = 1;
+
+constexpr size_t SIMULATION_RANDOM_SEED = 42;
+constexpr size_t SIMULATION_LAYERS_COUNT = 24;
+constexpr size_t SIMULATION_REPEATS_COUNT = 1024 / 6;
+
+constexpr size_t CONFIGURATION_WORK_GROUP_THREADS_COUNT = 256;
+constexpr size_t CONFIGURATION_WORK_GROUP_SIZE = 256;
+
+// #define FEATURE_USE_GROUP_SUMMATOR
+#define FEATURE_USE_LOCAL_MEMORY
+// #define FEATURE_USE_ATOMIC_SUMMATOR
+// #define FEATURE_ALIGNED_DEVICE_ALLOC
+#endif
+
+#ifdef MCML_GPU_MULTIPLE_THREADS
+constexpr size_t LAYER_OUTPUT_SIZE_X = 32;
+constexpr size_t LAYER_OUTPUT_SIZE_Y = 32;
+constexpr size_t LAYER_OUTPUT_SIZE_Z = 32;
+constexpr size_t LAYER_OUTPUT_COUNT = 1;
+
+constexpr size_t SIMULATION_RANDOM_SEED = 42;
+constexpr size_t SIMULATION_LAYERS_COUNT = 24;
+constexpr size_t SIMULATION_REPEATS_COUNT = 1024 / 8 / 4 / 8 / 4 * 32 / 6;
+
+constexpr size_t CONFIGURATION_WORK_GROUP_THREADS_COUNT = 256 / 8 * 8 * 4 / 32 * 8 / 8;
+constexpr size_t CONFIGURATION_WORK_GROUP_SIZE = 256 * 8 * 8 * 4;
+
+#define FEATURE_USE_GROUP_SUMMATOR
+// #define FEATURE_USE_LOCAL_MEMORY
+// #define FEATURE_USE_ATOMIC_SUMMATOR
+#define FEATURE_ALIGNED_DEVICE_ALLOC
+#endif
+
+
 
 #endif
