@@ -173,7 +173,100 @@ struct InputStruct
 		}
 	}
 
-	void configure_layers()
+	void configure_layers_v1()
+	{
+		if (num_layers > 0)
+		{
+			layerspecs[0].z0 = std::numeric_limits<double>::min();
+			layerspecs[0].z1 = std::numeric_limits<double>::min();
+			layerspecs[0].n = 1.0;
+			layerspecs[0].mua = std::numeric_limits<double>::min();
+			layerspecs[0].mus = std::numeric_limits<double>::min();
+			layerspecs[0].anisotropy = std::numeric_limits<double>::min();
+			layerspecs[0].cos_crit0 = std::numeric_limits<double>::min();
+			layerspecs[0].cos_crit1 = std::numeric_limits<double>::min();
+		}
+
+		if (num_layers > 1)
+		{
+			layerspecs[1].z0 = 0;
+			layerspecs[1].z1 = 0.01;
+			layerspecs[1].n = 1.5;
+			layerspecs[1].mua = 3.3;
+			layerspecs[1].mus = 107;
+			layerspecs[1].anisotropy = 0.79;
+			layerspecs[1].cos_crit0 = 0.745355;
+			layerspecs[1].cos_crit1 = 0.35901;
+		}
+
+		if (num_layers > 2)
+		{
+			layerspecs[2].z0 = 0.01;
+			layerspecs[2].z1 = 0.03;
+			layerspecs[2].n = 1.4;
+			layerspecs[2].mua = 2.7;
+			layerspecs[2].mus = 187.0;
+			layerspecs[2].anisotropy = 0.82;
+			//layerspecs[2].cos_crit0 = 0.0;
+			//layerspecs[2].cos_crit1 = 0.0;
+			layerspecs[2].cos_crit0 = 0.745355;
+			layerspecs[2].cos_crit1 = 0.35901;
+		}
+
+		if (num_layers > 3)
+		{
+			layerspecs[3].z0 = 0.03;
+			layerspecs[3].z1 = 0.05;
+			layerspecs[3].n = 1.4;
+			layerspecs[3].mua = 2.7;
+			layerspecs[3].mus = 187.0;
+			layerspecs[3].anisotropy = 0.82;
+			//layerspecs[3].cos_crit0 = 0.0;
+			//layerspecs[3].cos_crit1 = 0.0;
+			layerspecs[3].cos_crit0 = 0.745355;
+			layerspecs[3].cos_crit1 = 0.35901;
+		}
+
+		if (num_layers > 4)
+		{
+			layerspecs[3].z0 = 0.05;
+			layerspecs[3].z1 = 0.14;
+			layerspecs[3].n = 1.4;
+			layerspecs[3].mua = 2.7;
+			layerspecs[3].mus = 187.0;
+			layerspecs[3].anisotropy = 0.82;
+			//layerspecs[4].cos_crit0 = 0.0;
+			//layerspecs[4].cos_crit1 = 0.0;
+			layerspecs[4].cos_crit0 = 0.745355;
+			layerspecs[4].cos_crit1 = 0.35901;
+		}
+
+		constexpr int START_LAYER = 5;
+
+		for (int i = START_LAYER; i < num_layers; ++i)
+		{
+			layerspecs[i].z0 = 0.14 + 0.15 * (i - START_LAYER + 0);
+			layerspecs[i].z1 = 0.14 + 0.15 * (i - START_LAYER + 1);
+			layerspecs[i].n = 1.4;
+			layerspecs[i].mua = 2.4;
+			layerspecs[i].mus = 194;
+			layerspecs[i].anisotropy = 0.82;
+			//layerspecs[i].cos_crit0 = 0.0;
+			layerspecs[i].cos_crit0 = 0.35901;
+			layerspecs[i].cos_crit1 = 0.6998542;
+		}
+
+		layerspecs[num_layers - 1].z0 = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].z1 = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].n = 1.0;
+		layerspecs[num_layers - 1].mua = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].mus = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].anisotropy = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].cos_crit0 = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].cos_crit1 = std::numeric_limits<double>::min();
+	}
+
+	void configure_layers_v2()
 	{
 		if (num_layers > 0)
 		{
@@ -211,40 +304,18 @@ struct InputStruct
 			layerspecs[2].cos_crit1 = 0.0;
 		}
 
-		if (num_layers > 3)
-		{
-			layerspecs[3].z0 = 0.01;
-			layerspecs[3].z1 = 0.03;
-			layerspecs[3].n = 1.4;
-			layerspecs[3].mua = 2.7;
-			layerspecs[3].mus = 187.0;
-			layerspecs[3].anisotropy = 0.82;
-			layerspecs[3].cos_crit0 = 0.0;
-			layerspecs[3].cos_crit1 = 0.0;
-		}
+		constexpr int START_LAYER = 3;
 
-		if (num_layers > 4)
+		for (int i = START_LAYER; i < num_layers; ++i)
 		{
-			layerspecs[4].z0 = 0.05;
-			layerspecs[4].z1 = 0.14;
-			layerspecs[4].n = 1.4;
-			layerspecs[4].mua = 2.7;
-			layerspecs[4].mus = 187.0;
-			layerspecs[4].anisotropy = 0.82;
-			layerspecs[4].cos_crit0 = 0.0;
-			layerspecs[4].cos_crit1 = 0.0;
-		}
-
-		for (int i = 5; i < num_layers; ++i)
-		{
-			layerspecs[i].z0 = 0.14;
-			layerspecs[i].z1 = 0.2;
+			layerspecs[i].z0 = 0.03 + 0.5 * (i - START_LAYER + 0);
+			layerspecs[i].z1 = 0.03 + 0.5 * (i - START_LAYER + 1);
 			layerspecs[i].n = 1.4;
-			layerspecs[i].mua = 2.4;
-			layerspecs[i].mus = 194;
+			layerspecs[i].mua = 2.7;
+			layerspecs[i].mus = 187.0;
 			layerspecs[i].anisotropy = 0.82;
 			layerspecs[i].cos_crit0 = 0.0;
-			layerspecs[i].cos_crit1 = 0.6998542;
+			layerspecs[i].cos_crit1 = 0.0;
 		}
 
 		layerspecs[num_layers - 1].z0 = std::numeric_limits<double>::min();
@@ -255,6 +326,49 @@ struct InputStruct
 		layerspecs[num_layers - 1].anisotropy = std::numeric_limits<double>::min();
 		layerspecs[num_layers - 1].cos_crit0 = std::numeric_limits<double>::min();
 		layerspecs[num_layers - 1].cos_crit1 = std::numeric_limits<double>::min();
+	}
+
+	void configure_layers_v3()
+	{
+		if (num_layers > 0)
+		{
+			layerspecs[0].z0 = std::numeric_limits<double>::min();
+			layerspecs[0].z1 = std::numeric_limits<double>::min();
+			layerspecs[0].n = 1.0;
+			layerspecs[0].mua = std::numeric_limits<double>::min();
+			layerspecs[0].mus = std::numeric_limits<double>::min();
+			layerspecs[0].anisotropy = std::numeric_limits<double>::min();
+			layerspecs[0].cos_crit0 = std::numeric_limits<double>::min();
+			layerspecs[0].cos_crit1 = std::numeric_limits<double>::min();
+		}
+
+		constexpr int START_LAYER = 1;
+
+		for (int i = START_LAYER; i < num_layers; ++i)
+		{
+			layerspecs[i].z0 = 0 + 0.05 * (i - START_LAYER + 0);
+			layerspecs[i].z1 = 0 + 0.05 * (i - START_LAYER + 1);
+			layerspecs[i].n = 1.4;
+			layerspecs[i].mua = 2.7;
+			layerspecs[i].mus = 187.0;
+			layerspecs[i].anisotropy = 0.82;
+			layerspecs[i].cos_crit0 = 0.0;
+			layerspecs[i].cos_crit1 = 0.0;
+		}
+
+		layerspecs[num_layers - 1].z0 = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].z1 = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].n = 1.0;
+		layerspecs[num_layers - 1].mua = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].mus = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].anisotropy = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].cos_crit0 = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].cos_crit1 = std::numeric_limits<double>::min();
+	}
+
+	void configure_layers()
+	{
+		return configure_layers_v3();
 	}
 
 	void free()
@@ -323,18 +437,23 @@ struct PhotonStruct
 
 		inline void __track(T value)
 		{
+			if constexpr (CONFIGURATION_WORK_GROUP_THREADS_COUNT == 1U)
+			{
+				__view.at(__ps.x, __ps.y, __ps.z, 0) += value;
+			}
+			else
+			{
+
 #ifdef FEATURE_USE_LOCAL_MEMORY
-			sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::local_space>
-				atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
+				sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::local_space>
+					atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
 #else
-			sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
-				atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
+				sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
+					atomic(__view.at(__ps.x, __ps.y, __ps.z, 0));
 #endif
 
-			//sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
-			//	atomic(__view.at(__ps.x, __ps.y, __ps.z, __ps.layer % __ps.input.num_output_layers));
-
-			atomic.fetch_add(value);
+				atomic.fetch_add(value);
+			}
 		}
 
 	public:
@@ -368,14 +487,22 @@ struct PhotonStruct
 
 		weight_tracker<T>& operator/=(T value)
 		{
+			T tmp = __weight;
+
 			__weight /= value;
+
+			__track(tmp - __weight);
 
 			return *this;
 		}
 
 		weight_tracker<T>& operator*=(T value)
 		{
+			T tmp = __weight;
+
 			__weight *= value;
+
+			__track(tmp - __weight);
 
 			return *this;
 		}
@@ -435,7 +562,7 @@ struct PhotonStruct
 
 		x = 0.0; // COORD CHANGE
 		y = 0.0;
-		z = 0.1;
+		z = 0.0;
 
 		ux = 0.0;
 		uy = 0.0;
@@ -491,7 +618,6 @@ struct PhotonStruct
 		}
 	}
 
-
 	void hop()
 	{
 		// COORD CHANGE
@@ -499,8 +625,6 @@ struct PhotonStruct
 		x += step_size * ux;
 		y += step_size * uy;
 		z += step_size * uz;
-
-		w += MIN_WEIGHT;
 	}
 
 	void step_size_in_glass()
@@ -572,40 +696,16 @@ struct PhotonStruct
 
 	void record_r(float reflectance)
 	{
-		//size_t ir, ia;
-
-		//ir = static_cast<size_t>(sycl::sqrt(x * x + y * y) / input.dr);
-		//ir = std::min<size_t>(ir, input.nr - 1);
-
-		//ia = static_cast<size_t>(std::acos(-uz) / input.da);
-		//ia = std::min<size_t>(ia, input.na - 1);
-
 		w *= reflectance;
 	}
 
 	void record_t(float reflectance)
 	{
-		//size_t ir, ia;
-
-		//ir = static_cast<size_t>(sycl::sqrt(x * x + y * y) / input.dr);
-		//ir = std::min<size_t>(ir, input.nr - 1);
-
-		//ia = static_cast<size_t>(std::acos(uz) / input.da);
-		//ia = std::min<size_t>(ia, input.na - 1);
-
 		w *= reflectance;
 	}
 
 	void drop()
 	{
-		//size_t iz, ir;
-
-		/*iz = static_cast<size_t>(z / input.dz);
-		iz = sycl::min<size_t>(iz, input.nz - 1);
-
-		ir = static_cast<size_t>(sycl::sqrt(x * x + y * y) / input.dr);
-		ir = sycl::min<size_t>(ir, input.nr - 1);*/
-
 		const auto& olayer = get_current_layer();
 
 		auto mua = olayer.mua;
@@ -637,7 +737,9 @@ struct PhotonStruct
 			if (layer == 1)
 			{
 				uz = -uz1;
-				record_r(0.0);
+
+				// Do not record out of layer photons
+				// record_r(0.0);
 				dead = true;
 			}
 			else

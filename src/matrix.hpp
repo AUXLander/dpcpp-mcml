@@ -14,30 +14,33 @@ class matrix_properties
 	size_t __size_z;
 	size_t __size_l;
 
+	size_t __size_x_offset;
+	size_t __size_y_offset;
+	size_t __size_z_offset;
+	size_t __size_l_offset;
+
+	size_t __size_limit;
+
 public:
 	constexpr matrix_properties(size_t width, size_t height, size_t depth, size_t layer) :
-		__size_x(width), __size_y(height), __size_z(depth), __size_l(layer)
+		__size_x(width), __size_y(height), __size_z(depth), __size_l(layer),
+		__size_x_offset { 1U }, 
+		__size_y_offset { __size_x }, 
+		__size_z_offset{ __size_x * __size_y }, 
+		__size_l_offset { __size_x * __size_y * __size_z }, 
+		__size_limit { __size_x * __size_y * __size_z * __size_l }
 	{;}
 
 	constexpr matrix_properties(const matrix_properties&) = default;
 
-	size_t index(size_t x, size_t y, size_t z, size_t l) const noexcept
+	inline size_t index(size_t x, size_t y, size_t z, size_t l) const noexcept
 	{
-		size_t lspec, index;
+		x *= __size_x_offset;
+		y *= __size_y_offset;
+		z *= __size_z_offset;
+		l *= __size_l_offset;
 
-		lspec = 1U;
-		index = lspec * (x % __size_x);
-
-		lspec *= __size_x;
-		index += lspec * (y % __size_y);
-
-		lspec *= __size_y;
-		index += lspec * (z % __size_z);
-
-		lspec *= __size_z;
-		index += lspec * (l % __size_l);
-
-		return index;
+		return x + y + z + l;
 	}
 
 	constexpr size_t size_x() const noexcept
@@ -67,7 +70,7 @@ public:
 
 	constexpr size_t length() const noexcept
 	{
-		return __size_x * __size_y * __size_z * __size_l;
+		return __size_limit;
 	}
 
 	void save(std::ostream& ostream) const
@@ -297,52 +300,59 @@ class matrix_view_adaptor
 {
 	raw_memory_matrix_view<T>& __view;
 
-	static double clamp(double x, double min, double max)
-	{
-		if (x < min)
-		{
-			x = min;
-		}
-		else if (x > max)
-		{
-			x = max;
-		}
-
-		return x;
-	}
+	double x_step = 0;
+	double y_step = 0;
+	double z_step = 0;
 
 public:
-	                                     // 16x16x16x1  // 64x64x64x1    
-	constexpr static double x_min = -1;  // -0.65;        // -1
-	constexpr static double x_max = +1;  // +0.65;        // +1
-	constexpr static double y_min = -1;  // -0.65;        // -1
-	constexpr static double y_max = +1;  // +0.65;        // +1
-	constexpr static double z_min = -0.1;  // -0.50;        // -1
-	constexpr static double z_max = +1.4;  // +0.50;        // +1
+	                                 
+	constexpr static T x_min = -1;  
+	constexpr static T x_max = +1;  
+	constexpr static T y_min = -1;  
+	constexpr static T y_max = +1;
+	constexpr static T z_min = 0;
+	constexpr static T z_max = +1.4;
+
+	constexpr static double x_length = (x_max - x_min);
+	constexpr static double y_length = (y_max - y_min);
+	constexpr static double z_length = (z_max - z_min);
 
 public:
 	matrix_view_adaptor(raw_memory_matrix_view<T>& view) :
 		__view(view)
-	{;}
+	{
+		auto [size_x, size_y, size_z, size_l] = __view.properties().size();
+
+		x_step = x_length / static_cast<double>(size_x);
+		y_step = y_length / static_cast<double>(size_y);
+		z_step = z_length / static_cast<double>(size_z);
+	}
 
 	matrix_view_adaptor(matrix_view_adaptor<T>&) = default;
 	matrix_view_adaptor(matrix_view_adaptor<T>&&) noexcept = default;
 
-	T& at(double x, double y, double z, size_t l)
+	inline T& at(T x, T y, T z, size_t l) noexcept
 	{
-		auto [size_x, size_y, size_z, size_l] = __view.properties().size();
+		static_assert(LAYER_OUTPUT_SIZE_X == 16 || LAYER_OUTPUT_SIZE_X == 32 || LAYER_OUTPUT_SIZE_X == 64 || LAYER_OUTPUT_SIZE_X == 128);
 
-		constexpr double x_length = (x_max - x_min);
-		constexpr double y_length = (y_max - y_min);
-		constexpr double z_length = (z_max - z_min);
+		//size_t __x = static_cast<size_t>(sycl::clamp<float>(x - x_min, 0.0F, x_length) / x_step);
+		//size_t __y = static_cast<size_t>(sycl::clamp<float>(y - y_min, 0.0F, y_length) / y_step);
+		//size_t __z = static_cast<size_t>(sycl::clamp<float>(z - z_min, 0.0F, z_length) / z_step);
 
-		double x_step = x_length / static_cast<double>(size_x);
-		double y_step = y_length / static_cast<double>(size_y);
-		double z_step = z_length / static_cast<double>(size_z);
+		size_t __x = (x - x_min) / x_step;
+		size_t __y = (y - y_min) / y_step;
+		size_t __z = (z - z_min) / z_step;
 
-		size_t __x = static_cast<size_t>(clamp(x - x_min, 0.0, x_length) / x_step);
-		size_t __y = static_cast<size_t>(clamp(y - y_min, 0.0, y_length) / y_step);
-		size_t __z = static_cast<size_t>(clamp(z - z_min, 0.0, z_length) / z_step);
+		if (__x > LAYER_OUTPUT_SIZE_X - 1 || __y > LAYER_OUTPUT_SIZE_Y - 1 || __z > LAYER_OUTPUT_SIZE_Z - 1)
+		{
+			__x = 0;
+			__y = 0;
+			__z = 0;
+		}
+
+		//__x	&= LAYER_OUTPUT_SIZE_X - 1;
+		//__y	&= LAYER_OUTPUT_SIZE_Y - 1;
+		//__z	&= LAYER_OUTPUT_SIZE_Z - 1;
 
 		return __view.at(__x, __y, __z, l);
 	}
@@ -408,11 +418,5 @@ struct matrix_utils
 				}
 
 			});
-
-		//std::cout << "max: " << max << " log: " << log10f(max) << std::endl;
-		//std::cout << "min: " << min << " log: " << log10f(min) << std::endl;
-
-		//std::cout << "zmin: " << zmin << std::endl;
-		//std::cout << "zmax: " << zmax << std::endl;
 	}
 };

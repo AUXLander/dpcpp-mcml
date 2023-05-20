@@ -31,7 +31,9 @@ struct iofile
 
 		std::stringstream ss;
 
-		ss << std::put_time(std::localtime(&in_time_t), "%Y_%m_%d-%H_%M_%S");
+		ss << "newfile";
+
+		// ss << std::put_time(std::localtime(&in_time_t), "%Y_%m_%d-%H_%M_%S");
 
 		return ss.str();
 	}

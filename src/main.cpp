@@ -237,8 +237,8 @@ int main(int argc, char* argv[])
     constexpr size_t number_of_layers = SIMULATION_LAYERS_COUNT;
 
     // Параметры вычисления
-    constexpr size_t N_repeats = SIMULATION_REPEATS_COUNT; //  8'000 / 2; // 0.25 * 1000 / 10;// 8 * 1000 * 2 * 2 * 2; //  8 * 1000;
-    constexpr size_t work_group_size = CONFIGURATION_WORK_GROUP_THREADS_COUNT; // 32;
+    constexpr size_t N_repeats = SIMULATION_REPEATS_COUNT;
+    constexpr size_t work_group_size = CONFIGURATION_WORK_GROUP_THREADS_COUNT;
     constexpr size_t num_groups = CONFIGURATION_WORK_GROUP_SIZE;
     constexpr size_t total_threads_count = num_groups * work_group_size;
     constexpr size_t total_photons_runs = N_repeats * work_group_size * num_groups;
@@ -276,12 +276,12 @@ int main(int argc, char* argv[])
         std::cout << "                                              " << std::endl;
 
         // Вывод параметров вычисления
-        std::cout << "Repeats per tread:     " << N_repeats           << std::endl;
+        std::cout << "Repeats per item:      " << N_repeats           << std::endl;
         std::cout << "Work group size:       " << work_group_size     << std::endl;
         std::cout << "Number of groups:      " << num_groups          << std::endl;
         std::cout << "                                              " << std::endl;
-        std::cout << "Total treads count:    " << total_threads_count << std::endl;
-        std::cout << "Total photon runs:     " << total_photons_runs  << std::endl;
+        std::cout << "Total work item count: " << total_threads_count << std::endl;
+        std::cout << "Total photon runs:     " << total_photons_runs  << " ( log10 = " << sycl::log10<float>(total_photons_runs) << " )" << std::endl;
         std::cout << "Total memory used:     " << (N * num_groups + N) * sizeof(float) << " bytes" << std::endl;
         std::cout << "                                              " << std::endl;
 
@@ -306,8 +306,6 @@ int main(int argc, char* argv[])
         queue.submit(
             [&](sycl::handler& handler)
             {
-                //sycl::stream output(1024, 256, handler);
-
                 handler.parallel_for_work_group<class PhotonKernel>(sycl::range<1>(num_groups), sycl::range<1>(work_group_size),
                     [=](sycl::group<1> group) 
                     {
