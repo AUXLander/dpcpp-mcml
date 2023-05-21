@@ -306,12 +306,12 @@ class matrix_view_adaptor
 
 public:
 	                                 
-	constexpr static T x_min = -1;  
-	constexpr static T x_max = +1;  
-	constexpr static T y_min = -1;  
-	constexpr static T y_max = +1;
+	constexpr static T x_min = -0.25; // -1;
+	constexpr static T x_max = +0.25; // +1;
+	constexpr static T y_min = -0.25; // -1;
+	constexpr static T y_max = +0.25; // +1;
 	constexpr static T z_min = 0;
-	constexpr static T z_max = +1.4;
+	constexpr static T z_max = +0.25;
 
 	constexpr static double x_length = (x_max - x_min);
 	constexpr static double y_length = (y_max - y_min);

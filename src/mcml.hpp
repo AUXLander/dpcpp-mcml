@@ -356,6 +356,71 @@ struct InputStruct
 			layerspecs[i].cos_crit1 = 0.0;
 		}
 
+		layerspecs[2].z0 = 0;
+		layerspecs[2].z1 = 0.01;
+		layerspecs[2].n = 1.5;
+		layerspecs[2].mua = 3.3;
+		layerspecs[2].mus = 107;
+		layerspecs[2].anisotropy = 0.79;
+		layerspecs[2].cos_crit0 = 0.745355;
+		layerspecs[2].cos_crit1 = 0.35901;
+
+		layerspecs[4].z0 = 0;
+		layerspecs[4].z1 = 0.01;
+		layerspecs[4].n = 1.5;
+		layerspecs[4].mua = 3;
+		layerspecs[4].mus = 100;
+		layerspecs[4].anisotropy = 0.49;
+		layerspecs[4].cos_crit0 = 0.445355;
+		layerspecs[4].cos_crit1 = 0.15901;
+
+		layerspecs[5].z0 = 0;
+		layerspecs[5].z1 = 0.01;
+		layerspecs[5].n = 1.4;
+		layerspecs[5].mua = 3;
+		layerspecs[5].mus = 90;
+		layerspecs[5].anisotropy = 0.89;
+		layerspecs[5].cos_crit0 = 0.645355;
+		layerspecs[5].cos_crit1 = 0.55901;
+
+		layerspecs[num_layers - 1].z0 = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].z1 = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].n = 1.0;
+		layerspecs[num_layers - 1].mua = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].mus = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].anisotropy = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].cos_crit0 = std::numeric_limits<double>::min();
+		layerspecs[num_layers - 1].cos_crit1 = std::numeric_limits<double>::min();
+	}
+
+	void configure_layers_v4()
+	{
+		if (num_layers > 0)
+		{
+			layerspecs[0].z0 = std::numeric_limits<double>::min();
+			layerspecs[0].z1 = std::numeric_limits<double>::min();
+			layerspecs[0].n = 1.0;
+			layerspecs[0].mua = std::numeric_limits<double>::min();
+			layerspecs[0].mus = std::numeric_limits<double>::min();
+			layerspecs[0].anisotropy = std::numeric_limits<double>::min();
+			layerspecs[0].cos_crit0 = std::numeric_limits<double>::min();
+			layerspecs[0].cos_crit1 = std::numeric_limits<double>::min();
+		}
+
+		constexpr int START_LAYER = 1;
+
+		for (int i = START_LAYER; i < num_layers; ++i)
+		{
+			layerspecs[i].z0 = 0 + 0.05 * (i - START_LAYER + 0);
+			layerspecs[i].z1 = 0 + 0.05 * (i - START_LAYER + 1);
+			layerspecs[i].n = 1.4;
+			layerspecs[i].mua = 2.7;
+			layerspecs[i].mus = 187.0;
+			layerspecs[i].anisotropy = 0.82;
+			layerspecs[i].cos_crit0 = 0.0;
+			layerspecs[i].cos_crit1 = 0.0;
+		}
+
 		layerspecs[num_layers - 1].z0 = std::numeric_limits<double>::min();
 		layerspecs[num_layers - 1].z1 = std::numeric_limits<double>::min();
 		layerspecs[num_layers - 1].n = 1.0;
@@ -368,7 +433,7 @@ struct InputStruct
 
 	void configure_layers()
 	{
-		return configure_layers_v3();
+		return configure_layers_v4();
 	}
 
 	void free()
