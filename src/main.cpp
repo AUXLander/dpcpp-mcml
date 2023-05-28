@@ -247,16 +247,16 @@ int main(int argc, char* argv[])
     {
         sycl::queue queue(d_selector, exception_handler);
 
-        sycl_host_allocator<float> allocator(queue);
+        sycl_host_allocator<data_type_t> allocator(queue);
         sycl_shared_allocator shared_allocator(queue);
         sycl_device_allocator device_allocator(queue);
 
-        host_matrix_view<float> host_view(N_x, N_y, N_z, N_l, allocator);
+        host_matrix_view<data_type_t> host_view(N_x, N_y, N_z, N_l, allocator);
 
         size_t N = host_view.properties().length();
 
-        sycl_unique_ptr<float> data(N, device_allocator);
-        sycl_unique_ptr<float> group_data_pool(N * num_groups, device_allocator);
+        sycl_unique_ptr<data_type_t> data(N, device_allocator);
+        sycl_unique_ptr<data_type_t> group_data_pool(N * num_groups, device_allocator);
         sycl_unique_ptr<LayerStruct> layerspecs(number_of_layers, shared_allocator);
 
         InputStruct input;
@@ -281,18 +281,18 @@ int main(int argc, char* argv[])
         std::cout << "Number of groups:      " << num_groups          << std::endl;
         std::cout << "                                              " << std::endl;
         std::cout << "Total work item count: " << total_threads_count << std::endl;
-        std::cout << "Total photon runs:     " << total_photons_runs  << " ( log10 = " << sycl::log10<float>(total_photons_runs) << " )" << std::endl;
-        std::cout << "Total memory used:     " << (N * num_groups + N) * sizeof(float) << " bytes" << std::endl;
+        std::cout << "Total photon runs:     " << total_photons_runs  << " ( log10 = " << sycl::log10<data_type_t>(total_photons_runs) << " )" << std::endl;
+        std::cout << "Total memory used:     " << (N * num_groups + N) * sizeof(data_type_t) << " bytes" << std::endl;
         std::cout << "                                              " << std::endl;
 
-        float* device_data = data.get();
-        float* device_group_data_pool = group_data_pool.get();
+        data_type_t* device_data = data.get();
+        data_type_t* device_group_data_pool = group_data_pool.get();
 
         // Инициализация матрицы значений
         queue.parallel_for(num_groups,
             [=](auto group_index)
             {
-                float* data = device_group_data_pool + N * group_index;
+                data_type_t* data = device_group_data_pool + N * group_index;
                 
                 for (int i = 0; i < N; ++i)
                 {
@@ -311,12 +311,12 @@ int main(int argc, char* argv[])
                     {
                         size_t gid = group.get_group_id(0); // work group index
 
-                        float* group_data_pool = device_group_data_pool + N * gid;
+                        data_type_t* group_data_pool = device_group_data_pool + N * gid;
 
 #if defined(FEATURE_USE_LOCAL_MEMORY)
-                        float memory[N_x * N_y * N_z * N_l]{ 0.0 };
+                        data_type_t memory[N_x * N_y * N_z * N_l]{ 0.0 };
 #else
-                        float* memory = group_data_pool;
+                        data_type_t* memory = group_data_pool;
 #endif // FEATURE_USE_LOCAL_MEMORY
 
                         group.parallel_for_work_item(
@@ -325,7 +325,7 @@ int main(int argc, char* argv[])
                                 uint64_t thread_global_id = item.get_global_id();
                                 mcg59_t random_generator(random_seed, thread_global_id, work_group_size * num_groups);
 
-                                raw_memory_matrix_view<float> view(memory, N_x, N_y, N_z, N_l);
+                                raw_memory_matrix_view<data_type_t> view(memory, N_x, N_y, N_z, N_l);
 
                                 PhotonStruct photon(random_generator, view, input);
 
@@ -356,7 +356,7 @@ int main(int argc, char* argv[])
                                 for (int i = 0; i < batch_size; ++i)
                                 {
 #if defined(FEATURE_USE_ATOMIC_SUMMATOR)
-                                    sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
+                                    sycl::atomic_ref<data_type_t, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>
                                         atomic(device_data[thread_local_offset + i]);
 
                                     atomic.fetch_add(memory[thread_local_offset + i]);
@@ -397,7 +397,7 @@ int main(int argc, char* argv[])
                                 auto item_local_index = static_cast<size_t>(item.get_local_id());
                                 auto item_local_offset = batch_size * item_local_index;
 
-                                float thread_local_summ_batch[batch_size]{ 0.0 };
+                                data_type_t thread_local_summ_batch[batch_size]{ 0.0 };
 
                                 for (size_t data_group_index = 0; data_group_index < num_groups; ++data_group_index)
                                 {
@@ -424,11 +424,11 @@ int main(int argc, char* argv[])
         queue.parallel_for(N,
             [=](auto idx)
             {
-                float summ = 0;
+                data_type_t summ = 0;
 
                 for (size_t data_group_index = 0; data_group_index < num_groups; ++data_group_index)
                 {
-                    float* data = device_group_data_pool + N * data_group_index;
+                    data_type_t* data = device_group_data_pool + N * data_group_index;
 
                     summ += data[idx];
                 }
@@ -460,7 +460,7 @@ int main(int argc, char* argv[])
             {
                 for (size_t x = 0; x < size_x; ++x)
                 {
-                    float v = 0.0F;
+                    data_type_t v = 0.0F;
 
                     for (size_t z = 0; z < size_z; ++z)
                     {

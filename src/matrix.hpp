@@ -35,12 +35,34 @@ public:
 
 	inline size_t index(size_t x, size_t y, size_t z, size_t l) const noexcept
 	{
+#ifdef  OPT_MTX
+
 		x *= __size_x_offset;
 		y *= __size_y_offset;
 		z *= __size_z_offset;
 		l *= __size_l_offset;
 
 		return x + y + z + l;
+
+#else
+
+		size_t lspec, index;
+
+		lspec = 1U;
+		index = lspec * (x % __size_x);
+
+		lspec *= __size_x;
+		index += lspec * (y % __size_y);
+
+		lspec *= __size_y;
+		index += lspec * (z % __size_z);
+
+		lspec *= __size_z;
+		index += lspec * (l % __size_l);
+
+		return index;
+
+#endif //  OPT_MTX
 	}
 
 	constexpr size_t size_x() const noexcept
@@ -335,24 +357,29 @@ public:
 	{
 		static_assert(LAYER_OUTPUT_SIZE_X == 16 || LAYER_OUTPUT_SIZE_X == 32 || LAYER_OUTPUT_SIZE_X == 64 || LAYER_OUTPUT_SIZE_X == 128);
 
-		//size_t __x = static_cast<size_t>(sycl::clamp<float>(x - x_min, 0.0F, x_length) / x_step);
-		//size_t __y = static_cast<size_t>(sycl::clamp<float>(y - y_min, 0.0F, y_length) / y_step);
-		//size_t __z = static_cast<size_t>(sycl::clamp<float>(z - z_min, 0.0F, z_length) / z_step);
+#ifdef OPT_MTX
 
 		size_t __x = (x - x_min) / x_step;
 		size_t __y = (y - y_min) / y_step;
 		size_t __z = (z - z_min) / z_step;
 
-		if (__x > LAYER_OUTPUT_SIZE_X - 1 || __y > LAYER_OUTPUT_SIZE_Y - 1 || __z > LAYER_OUTPUT_SIZE_Z - 1)
-		{
-			__x = 0;
-			__y = 0;
-			__z = 0;
-		}
+		//if (__x > LAYER_OUTPUT_SIZE_X - 1 || __y > LAYER_OUTPUT_SIZE_Y - 1 || __z > LAYER_OUTPUT_SIZE_Z - 1)
+		//{
+		//	__x = 0;
+		//	__y = 0;
+		//	__z = 0;
+		//}
+#else
 
-		//__x	&= LAYER_OUTPUT_SIZE_X - 1;
-		//__y	&= LAYER_OUTPUT_SIZE_Y - 1;
-		//__z	&= LAYER_OUTPUT_SIZE_Z - 1;
+		size_t __x = static_cast<size_t>(libset::clamp<double>(x - x_min, 0.0F, x_length) / x_step);
+		size_t __y = static_cast<size_t>(libset::clamp<double>(y - y_min, 0.0F, y_length) / y_step);
+		size_t __z = static_cast<size_t>(libset::clamp<double>(z - z_min, 0.0F, z_length) / z_step);
+
+#endif
+
+		__x	&= LAYER_OUTPUT_SIZE_X - 1;
+		__y	&= LAYER_OUTPUT_SIZE_Y - 1;
+		__z	&= LAYER_OUTPUT_SIZE_Z - 1;
 
 		return __view.at(__x, __y, __z, l);
 	}

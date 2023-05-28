@@ -6,7 +6,7 @@
 #include "matrix.hpp"
 #include "iofile.hpp"
 
-using atomic_array_ref = sycl::atomic_ref<float, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>;
+using atomic_array_ref = sycl::atomic_ref<data_type_t, sycl::memory_order::relaxed, sycl::memory_scope::work_group, sycl::access::address_space::ext_intel_global_device_space>;
 
 // #define PARTIALREFLECTION 0
   /* 1=split photon, 0=statistical reflection. */
@@ -64,11 +64,11 @@ struct mcg59_t
 		this->offset = RaiseToPower(MCG59_C, step);
 	}
 
-	inline float next()
+	inline data_type_t next()
 	{
 		this->value = (this->value * this->offset) & MCG59_DEC_M;
 
-		return static_cast<float>(this->value) / MCG59_M;
+		return static_cast<data_type_t>(this->value) / MCG59_M;
 	}
 
 	uint64_t RaiseToPower(uint64_t argument, unsigned int power)
@@ -95,13 +95,13 @@ struct mcg59_t
 
 struct LayerStruct
 {
-	float z0, z1;	/* z coordinates of a layer. [cm] */
-	float n;			/* refractive index of a layer. */
-	float mua;	    /* absorption coefficient. [1/cm] */
-	float mus;	    /* scattering coefficient. [1/cm] */
-	float anisotropy;		    /* anisotropy. */
+	data_type_t z0, z1;	/* z coordinates of a layer. [cm] */
+	data_type_t n;			/* refractive index of a layer. */
+	data_type_t mua;	    /* absorption coefficient. [1/cm] */
+	data_type_t mus;	    /* scattering coefficient. [1/cm] */
+	data_type_t anisotropy;		    /* anisotropy. */
 
-	float cos_crit0, cos_crit1;
+	data_type_t cos_crit0, cos_crit1;
 
 	inline bool is_glass() const
 	{
@@ -130,12 +130,12 @@ struct InputStruct
 	/* 'A' for ASCII, */
 	/* 'B' for binary. */
 	long num_photons; 		/* to be traced. */
-	float Wth; 				/* play roulette if photon */
+	data_type_t Wth; 				/* play roulette if photon */
 	/* weight < Wth.*/
 
-	float dz;				/* z grid separation.[cm] */
-	float dr;				/* r grid separation.[cm] */
-	float da;				/* alpha grid separation. */
+	data_type_t dz;				/* z grid separation.[cm] */
+	data_type_t dr;				/* r grid separation.[cm] */
+	data_type_t da;				/* alpha grid separation. */
 	/* [radian] */
 	short nz;					/* array range 0..nz-1. */
 	short nr;					/* array range 0..nr-1. */
@@ -445,9 +445,9 @@ struct InputStruct
 	}
 };
 
-float RFresnel(float incidentRefractiveIndex, float transmitRefractiveIndex, float incidentCos, float& transmitCos)
+data_type_t RFresnel(data_type_t incidentRefractiveIndex, data_type_t transmitRefractiveIndex, data_type_t incidentCos, data_type_t& transmitCos)
 {
-	float reflectance;
+	data_type_t reflectance;
 
 	if (incidentRefractiveIndex == transmitRefractiveIndex)
 	{
@@ -467,8 +467,8 @@ float RFresnel(float incidentRefractiveIndex, float transmitRefractiveIndex, flo
 	}
 	else
 	{
-		float incidentSin = sycl::sqrt(1.0F - incidentCos * incidentCos);
-		float transmitSin = incidentRefractiveIndex * incidentSin / transmitRefractiveIndex;
+		data_type_t incidentSin = libset::sqrt(1.0F - incidentCos * incidentCos);
+		data_type_t transmitSin = incidentRefractiveIndex * incidentSin / transmitRefractiveIndex;
 
 		if (transmitSin >= 1.0)
 		{
@@ -477,12 +477,12 @@ float RFresnel(float incidentRefractiveIndex, float transmitRefractiveIndex, flo
 		}
 		else
 		{
-			transmitCos = sycl::sqrt(1.0 - transmitSin * transmitSin);
+			transmitCos = libset::sqrt(1.0 - transmitSin * transmitSin);
 
-			float cap = incidentCos * transmitCos - incidentSin * transmitSin; /* c+ = cc - ss. */
-			float cam = incidentCos * transmitCos + incidentSin * transmitSin; /* c- = cc + ss. */
-			float sap = incidentSin * transmitCos + incidentCos * transmitSin; /* s+ = sc + cs. */
-			float sam = incidentSin * transmitCos - incidentCos * transmitSin; /* s- = sc - cs. */
+			data_type_t cap = incidentCos * transmitCos - incidentSin * transmitSin; /* c+ = cc - ss. */
+			data_type_t cam = incidentCos * transmitCos + incidentSin * transmitSin; /* c- = cc + ss. */
+			data_type_t sap = incidentSin * transmitCos + incidentCos * transmitSin; /* s+ = sc + cs. */
+			data_type_t sam = incidentSin * transmitCos - incidentCos * transmitSin; /* s- = sc - cs. */
 
 			reflectance = 0.5F * sam * sam * (cam * cam + cap * cap) / (sap * sap * cam * cam);
 		}
@@ -496,7 +496,7 @@ struct PhotonStruct
 	template<class T>
 	class weight_tracker
 	{
-		float                  __weight;
+		T                      __weight;
 		PhotonStruct&          __ps;
 		matrix_view_adaptor<T> __view;
 
@@ -523,7 +523,7 @@ struct PhotonStruct
 
 	public:
 
-		weight_tracker(float weight, PhotonStruct& ps, matrix_view_adaptor<T>& view) :
+		weight_tracker(data_type_t weight, PhotonStruct& ps, matrix_view_adaptor<T>& view) :
 			__weight{ weight }, __ps{ ps }, __view{ view }
 		{;}
 
@@ -593,17 +593,17 @@ struct PhotonStruct
 		}
 	};
 
-	float x{ 0 }, y{ 0 }, z{ 0 };    // vector of position
-	float ux{ 0 }, uy{ 0 }, uz{ 0 }; // vector of direction
+	data_type_t x{ 0 }, y{ 0 }, z{ 0 };    // vector of position
+	data_type_t ux{ 0 }, uy{ 0 }, uz{ 0 }; // vector of direction
 
-	weight_tracker<float> w;
+	weight_tracker<data_type_t> w;
 
 	bool dead{ false };
 
 	size_t layer{ 0 };
 
-	float sleft{ 0 };
-	float step_size{ 0 };
+	data_type_t sleft{ 0 };
+	data_type_t step_size{ 0 };
 
 	mcg59_t &random;
 
@@ -611,13 +611,13 @@ struct PhotonStruct
 
 	const LayerStruct* layerspecs;
 
-	PhotonStruct(mcg59_t& random, matrix_view_adaptor<float> view, const InputStruct& input) :
+	PhotonStruct(mcg59_t& random, matrix_view_adaptor<data_type_t> view, const InputStruct& input) :
 		w{ 0.0, *this, view }, random{ random }, input{ input }, layerspecs{ input.layerspecs }
 	{;}
 
 	~PhotonStruct() = default;
 
-	void init(float Rspecular)
+	void init(data_type_t Rspecular)
 	{
 		w = 1.0 - Rspecular;
 		dead = 0;
@@ -640,32 +640,32 @@ struct PhotonStruct
 		}
 	}
 
-	void spin(float anisotropy)
+	void spin(data_type_t anisotropy)
 	{
 		const auto ux = this->ux;
 		const auto uy = this->uy;
 		const auto uz = this->uz;
 
 		const auto cost = SpinTheta(anisotropy);
-		const auto sint = sycl::sqrt(1.0F - cost * cost);
+		const auto sint = libset::sqrt(1.0F - cost * cost);
 
-		const auto psi = 2.0F * (float)PI * get_random();
+		const auto psi = 2.0F * (data_type_t)PI * get_random();
 
-		const auto cosp = sycl::cos(psi);
+		const auto cosp = libset::cos(psi);
 
 
-		float sinp; // = std::sin(psi);
+		data_type_t sinp; // = std::sin(psi);
 
 		if (psi < PI)
 		{
-			sinp = sycl::sqrt(1.0F - cosp * cosp);
+			sinp = libset::sqrt(1.0F - cosp * cosp);
 		}
 		else
 		{
-			sinp = -sycl::sqrt(1.0F - cosp * cosp);
+			sinp = -libset::sqrt(1.0F - cosp * cosp);
 		}
 
-		if (sycl::abs(uz) > COSZERO)
+		if (libset::abs<data_type_t>(uz) > COSZERO)
 		{
 			const auto temp = (uz >= 0.0) ? 1.0F : -1.0F;
 
@@ -675,7 +675,7 @@ struct PhotonStruct
 		}
 		else
 		{
-			const auto temp = sycl::sqrt<float>(1.0F - uz * uz);
+			const auto temp = sycl::sqrt<data_type_t>(1.0F - uz * uz);
 
 			this->ux = sint * (ux * uz * cosp - uy * sinp) / temp + ux * cost;
 			this->uy = sint * (uy * uz * cosp + ux * sinp) / temp + uy * cost;
@@ -716,11 +716,11 @@ struct PhotonStruct
 
 	bool hit_boundary()
 	{
-		if (sycl::abs(uz) > 1e-10)
+		if (libset::abs(uz) > 1e-10)
 		{
 			const auto& olayer = get_current_layer();
 
-			float dl_b;
+			data_type_t dl_b;
 
 			if (uz > 0.0)
 			{
@@ -759,12 +759,12 @@ struct PhotonStruct
 		}
 	}
 
-	void record_r(float reflectance)
+	void record_r(data_type_t reflectance)
 	{
 		w *= reflectance;
 	}
 
-	void record_t(float reflectance)
+	void record_t(data_type_t reflectance)
 	{
 		w *= reflectance;
 	}
@@ -783,10 +783,10 @@ struct PhotonStruct
 
 	void cross_up_or_not()
 	{
-		float uz1 = 0.0;
-		float r = 0.0;
-		float ni = layerspecs[layer].n;
-		float nt = layerspecs[layer - 1].n;
+		data_type_t uz1 = 0.0;
+		data_type_t r = 0.0;
+		data_type_t ni = layerspecs[layer].n;
+		data_type_t nt = layerspecs[layer - 1].n;
 
 		if (-uz <= layerspecs[layer].cos_crit0)
 		{
@@ -824,10 +824,10 @@ struct PhotonStruct
 
 	void cross_down_or_not()
 	{
-		float uz1 = 0.0;
-		float r = 0.0;
-		float ni = layerspecs[layer].n;
-		float nt = layerspecs[layer + 1].n;
+		data_type_t uz1 = 0.0;
+		data_type_t r = 0.0;
+		data_type_t ni = layerspecs[layer].n;
+		data_type_t nt = layerspecs[layer + 1].n;
 
 		if (uz <= layerspecs[layer].cos_crit1)
 		{
@@ -873,19 +873,19 @@ struct PhotonStruct
 		}
 	}
 
-	float SpinTheta(float anisotropy)
+	data_type_t SpinTheta(data_type_t anisotropy)
 	{
-		float cost = 2.0 * get_random() - 1.0;
+		data_type_t cost = 2.0 * get_random() - 1.0;
 
-		if (sycl::abs(anisotropy) > 1e-10)
+		if (libset::abs(anisotropy) > 1e-10)
 		{
-			const float anisotropy_sqr = anisotropy * anisotropy;
+			const data_type_t anisotropy_sqr = anisotropy * anisotropy;
 
-			const float temp = (1.0 - anisotropy_sqr) / (1.0 + anisotropy * cost);
+			const data_type_t temp = (1.0 - anisotropy_sqr) / (1.0 + anisotropy * cost);
 
 			cost = 0.5 * (1.0 + anisotropy_sqr - temp * temp) / anisotropy;
 
-			cost = sycl::clamp(cost, -1.0f, +1.0f);
+			cost = libset::clamp<data_type_t>(cost, -1.0f, +1.0f);
 		}
 
 		return cost;
@@ -918,36 +918,39 @@ struct PhotonStruct
 			const auto mua = olayer.mua;
 			const auto mus = olayer.mus;
 
-			float rnd;
+			data_type_t rnd;
+
+#ifdef OPT_RAND
 
 			do
 			{
 				rnd = get_random();
 			} while (rnd <= 0.0);
 
-			sleft = sycl::abs(sleft) < 1e-10 ? -sycl::log(rnd) : sleft;
+			sleft = libset::abs<data_type_t>(sleft) < 1e-10 ? -sycl::log(rnd) : sleft;
 
 			step_size = sleft / (mua + mus);
 
-			//if (sycl::abs(sleft) < 1e-10)
-			//{
-			//	double rnd;
+#else
 
-			//	do
-			//	{
-			//		rnd = get_random();
-			//	} 
-			//	while (rnd <= 0.0);
+			if (sycl::abs(sleft) < 1e-10)
+			{
+				data_type_t rnd;
 
-			//	step_size = 1.0 / (6 * rnd * (mua + mus));
+				do
+				{
+					rnd = get_random();
+				} 
+				while (rnd <= 0.0);
 
-			//	// step_size = -sycl::log(rnd) / (mua + mus);
-			//}
-			//else
-			//{
-			//	step_size = sleft / (mua + mus);
-			//}
+				step_size = -sycl::log(rnd) / (mua + mus);
+			}
+			else
+			{
+				step_size = sleft / (mua + mus);
+			}
 
+#endif
 			sleft = 0.0;
 
 			if (hit_boundary())
@@ -974,17 +977,17 @@ struct PhotonStruct
 		return layerspecs[layer];
 	}
 
-	inline float get_random()
+	inline data_type_t get_random()
 	{
 		return random.next();
 	}
 };
 
-float Rspecular(LayerStruct* Layerspecs_Ptr)
+data_type_t Rspecular(LayerStruct* Layerspecs_Ptr)
 {
-	float r1;
-	float r2;
-	float temp;
+	data_type_t r1;
+	data_type_t r2;
+	data_type_t temp;
 
 	temp = (Layerspecs_Ptr[0].n - Layerspecs_Ptr[1].n) / (Layerspecs_Ptr[0].n + Layerspecs_Ptr[1].n);
 	r1 = temp * temp;
